@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, NavLink } from "react-router";
+import FastShiftLogo from "../FastShiftLogo/FastShiftLogo";
 
 const NavBar = () => {
   const navLink = (
@@ -40,8 +41,8 @@ const NavBar = () => {
             {navLink}
           </ul>
         </div>
-        <Link to={"/"} className="btn btn-ghost text-xl">
-          FastShift
+        <Link to={"/"} >
+          <FastShiftLogo></FastShiftLogo>
         </Link>
       </div>
       <div className="navbar-center hidden lg:flex">
