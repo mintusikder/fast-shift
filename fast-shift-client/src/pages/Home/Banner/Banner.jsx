@@ -6,7 +6,12 @@ import bannerImg2 from "../../../assets/assets/banner/banner2.png";
 import bannerImg3 from "../../../assets/assets/banner/banner3.png";
 const Banner = () => {
   return (
-    <Carousel className="py-8">
+    <Carousel
+      showThumbs={false}
+      autoPlay={true}
+      infiniteLoop={true}
+      className="py-8"
+    >
       <div>
         <img src={bannerImg1} />
       </div>
