@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 const Login = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
+  const [showPassword, setShowPassword] = useState(false);
+
   const onSubmit = (data) => {
-    console.log(data);
+    console.log("Login data:", data);
+    // Handle login logic here
   };
 
   return (
@@ -16,34 +17,42 @@ const Login = () => {
       <h1 className="text-2xl font-bold text-center">Login</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Username */}
+        {/* Email */}
         <div className="space-y-1 text-sm">
-          <label htmlFor="username" className="block text-gray-700">
-            Username
-          </label>
+          <label htmlFor="email" className="block text-gray-700">Email</label>
           <input
-            type="text"
-            {...register("email")}
-            id="username"
-            name="username"
-            placeholder="Enter your username"
+            type="email"
+            {...register("email", { required: "Email is required" })}
+            id="email"
+            placeholder="Enter your email"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
+          {errors.email && <p className="text-red-600">{errors.email.message}</p>}
         </div>
 
         {/* Password */}
-        <div className="space-y-1 text-sm">
-          <label htmlFor="password" className="block text-gray-700">
-            Password
-          </label>
+        <div className="space-y-1 text-sm relative">
+          <label htmlFor="password" className="block text-gray-700">Password</label>
           <input
-            {...register("password", { required: true, minLength: 6 , pattern: /[0-9]/i})}
-            type="password"
+            type={showPassword ? "text" : "password"}
+            {...register("password", {
+              required: "Password is required",
+              minLength: { value: 6, message: "Password must be at least 6 characters" },
+              pattern: { value: /[0-9]/, message: "Password must include at least one number" }
+            })}
             id="password"
-            name="password"
             placeholder="Enter your password"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
+          {/* Toggle button */}
+          <span
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-[38px] cursor-pointer text-gray-600"
+          >
+            {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
+          </span>
+          {errors.password && <p className="text-red-600">{errors.password.message}</p>}
+
           <div className="flex justify-end text-xs mt-1">
             <a href="#" className="text-primary hover:underline">
               Forgot Password?
@@ -54,7 +63,7 @@ const Login = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="btn w-full bg-primary text-white  transition"
+          className="btn w-full bg-primary text-white transition"
         >
           Sign in
         </button>
@@ -67,12 +76,11 @@ const Login = () => {
         <div className="flex-1 h-px bg-gray-300"></div>
       </div>
 
-      {/* Social Buttons */}
+      {/* Social Login */}
       <div className="flex justify-center space-x-4">
-        {/* Google */}
         <button
           aria-label="Login with Google"
-          className="p-3 border rounded-md hover:bg-gray-100"
+          className="p-3 border w-full rounded-md hover:bg-gray-100"
         >
           <svg
             className="w-full text-primary h-5 fill-current"
@@ -83,12 +91,12 @@ const Login = () => {
         </button>
       </div>
 
-      {/* Signup link */}
+      {/* Sign up link */}
       <p className="text-xs text-center text-gray-500">
-        Don't have an account?{" "}
-        <a href="#" className="text-primary hover:underline">
-          Sign up
-        </a>
+        Don’t have an account?{" "}
+        <Link to="/register" className="text-primary hover:underline">
+          Register
+        </Link>
       </p>
     </div>
   );
