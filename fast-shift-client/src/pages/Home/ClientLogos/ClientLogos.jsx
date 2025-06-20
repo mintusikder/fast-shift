@@ -1,4 +1,3 @@
-// src/components/ClientLogos.jsx
 import Marquee from "react-fast-marquee";
 
 // Import local logo assets
@@ -14,17 +13,17 @@ const ClientLogos = () => {
   const logos = [logo1, logo2, logo3, logo4, logo5, logo6, logo7];
 
   return (
-    <div className="my-10 px-4">
-      <h2 className="text-2xl font-semibold text-center mb-6">
-        We've helped thousands of sales teams
+    <div className="my-12 px-4">
+      <h2 className="text-2xl  mb-12 font-semibold text-center ">
+        We've helped thousands of sales teams
       </h2>
-      <Marquee speed={50} gradient={false} direction="right">
+      <Marquee pauseOnHover={true} speed={50} gradient={false} direction="right">
         {logos.map((logo, index) => (
           <img
             key={index}
             src={logo}
             alt={`Client logo ${index + 1}`}
-            className="mx-8 h-12 object-contain"
+            className="mx-24 h-6 object-contain"
           />
         ))}
       </Marquee>

@@ -1,4 +1,3 @@
-// src/components/ServiceCard.jsx
 import React from "react";
 
 const ServiceCard = ({ service }) => {
