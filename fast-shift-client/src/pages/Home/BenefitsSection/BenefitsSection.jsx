@@ -29,7 +29,7 @@ const BenefitsSection = () => {
       <h2 className="text-3xl font-bold mb-8 text-center">Our Benefits</h2>
       <div className="space-y-6 ">
         {benefits.map((benefit) => (
-          <div key={benefit.id} className="card card-side bg-base-100 shadow-md  py-12 flex-col md:flex-row items-center gap-4">
+          <div key={benefit.id} className="card card-side bg-base-100 shadow-md py-12 flex-col md:flex-row items-center gap-4 ">
             <figure className="w-full md:w-1/3">
               <img src={benefit.image} alt={benefit.title} className="w-full h-40 object-contain" />
             </figure>
