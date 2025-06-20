@@ -4,9 +4,9 @@ import bgImage from "../../../assets/assets/Merchant/be-a-merchant-bg.png";
 
 const MerchantSection = () => {
   return (
-    <div className="py-12 p-4">
+    <div  data-aos="fade-up"  data-aos-duration="1000"  className="py-12 p-4">
       <section
-        className="bg-[#09383b] bg-cover bg-center rounded-2xl "
+        className="bg-[#09383b] bg-no-repeat rounded-2xl "
         style={{
           backgroundImage: `url(${bgImage})`,
         }}

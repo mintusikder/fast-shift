@@ -25,7 +25,7 @@ const benefits = [
 
 const BenefitsSection = () => {
   return (
-    <section className="max-w-6xl mx-auto px-4  py-12">
+    <section  data-aos="fade-up"  data-aos-duration="1000"  className="max-w-6xl mx-auto px-4  py-12">
       <h2 className="text-3xl font-bold mb-8 text-center">Our Benefits</h2>
       <div className="space-y-6 ">
         {benefits.map((benefit) => (
