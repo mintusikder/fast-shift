@@ -10,7 +10,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { auth } from "../../firebase/firebase.config";
+import { auth } from "../firebase/firebase.config";
 
 //  Google provider
 const provider = new GoogleAuthProvider();
