@@ -2,18 +2,28 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Link } from "react-router";
+import useAuth from "../../hooks/useAuth";
 
 const Register = () => {
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
-  const [showPassword, setShowPassword] = useState(false);
+  const { createUser } = useAuth();
 
   const onSubmit = (data) => {
     console.log("Register Form Data:", data);
-    // handle user registration here (e.g., Firebase or API)
+    console.log(createUser);
+    // handle user registration
+    createUser(data.email, data.password)
+      .then((result) => {
+        console.log(result.user);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (
@@ -91,13 +101,13 @@ const Register = () => {
 
         {/* Photo URL */}
         <div className="space-y-1 text-sm">
-          <label htmlFor="photoURL" className="block text-gray-700">
+          <label htmlFor="url" className="block text-gray-700">
             Photo URL
           </label>
           <input
-            type="text"
-            id="photoURL"
-            {...register("photoURL")}
+            type="url"
+            id="url"
+            {...register("url")}
             placeholder="Enter your photo URL"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
