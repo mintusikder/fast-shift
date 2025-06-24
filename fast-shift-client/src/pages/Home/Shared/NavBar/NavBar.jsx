@@ -26,12 +26,19 @@ const NavBar = () => {
         <NavLink to="/about" className="hover:underline">
           About
         </NavLink>
-             <NavLink to="/send-parcel" className=" hover:underline">
-          Send Parcel
-        </NavLink>
         <NavLink to="/coverage" className="hover:underline">
           Coverage
         </NavLink>
+        <NavLink to="/send-parcel" className="hover:underline">
+          send-parcel
+        </NavLink>
+        {user && (
+          <>
+            <NavLink to="/dashboard" className=" hover:underline">
+              Dashboard
+            </NavLink>
+          </>
+        )}
 
         {user ? (
           <div className="flex items-center gap-4 relative group">
