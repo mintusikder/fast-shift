@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import SocialLogin from "./SocialLogin";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import useAuth from "../../hooks/useAuth";
+import SocialLogin from "./SocialLogin";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,16 +12,18 @@ const Register = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
-
-  const { createUser, updateUserProfile } = useAuth(); //  include profile update
+  const location = useLocation();
+  const navigate = useNavigate();
+  console.log(location);
+  const from = location.state?.from || "/";
+  const { createUser, updateUserProfile } = useAuth();
 
   const onSubmit = (data) => {
     console.log("Register Form Data:", data);
-
     createUser(data.email, data.password)
       .then((result) => {
+        navigate(from);
         console.log("User created:", result.user);
-
         //  Update user's displayName and photoURL
         return updateUserProfile({
           displayName: data.username,
@@ -132,7 +134,7 @@ const Register = () => {
         </button>
       </form>
 
-      <SocialLogin />
+      <SocialLogin></SocialLogin>
 
       <p className="text-xs text-center text-gray-500">
         Already have an account?{" "}

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import SocialLogin from "./SocialLogin";
+import useAuth from "../../hooks/useAuth";
 
 const Login = () => {
   const {
@@ -10,11 +11,24 @@ const Login = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
+  const { loginUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  console.log(location);
+  const from = location.state?.from || "/";
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = (data) => {
     console.log("Login data:", data);
     // Handle login logic here
+    loginUser(data.email, data.password)
+      .then((result) => {
+        console.log(result.user);
+        navigate(from);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
 
   return (
