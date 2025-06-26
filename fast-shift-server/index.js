@@ -1,7 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const Stripe = require("stripe");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const stripe = Stripe(process.env.PAYMENT_KEY);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -19,7 +21,6 @@ const client = new MongoClient(process.env.MONGO_URI, {
   },
 });
 
-// Global collection reference
 let parcelCollection;
 
 async function run() {
@@ -29,27 +30,65 @@ async function run() {
     parcelCollection = db.collection("parcels");
     console.log("Connected to MongoDB");
   } catch (err) {
-    console.error("MongoDB Connection Error:", err);
+    console.error(" MongoDB Connection Error:", err);
   }
 }
 run().catch(console.dir);
 
-// POST /parcels - Create a new parcel
+// ========== Routes ==========
+// Create PaymentIntent
+app.post("/create-payment-intent", async (req, res) => {
+  const { amount } = req.body;
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // Stripe requires amount in cents
+      currency: "usd",
+      payment_method_types: ["card"],
+    });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET parcel by ID
+app.get("/parcels/:id", async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const parcel = await parcelCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!parcel) {
+      return res.status(404).send({ error: "Parcel not found" });
+    }
+
+    res.send(parcel);
+  } catch (error) {
+    console.error(" Parcel Fetch Error:", error);
+    res.status(500).send({ error: "Failed to fetch parcel" });
+  }
+});
+
+// POST - Create a new parcel
 app.post("/parcels", async (req, res) => {
   try {
     const parcelData = req.body;
     const result = await parcelCollection.insertOne(parcelData);
     res.status(201).send({
-      message: "Parcel saved successfully",
+      message: " Parcel saved successfully",
       insertedId: result.insertedId,
     });
   } catch (err) {
-    console.error("Parcel Save Error:", err);
+    console.error(" Parcel Save Error:", err);
     res.status(500).send({ message: "Failed to save parcel", error: err });
   }
 });
 
-// GET /parcels?email=xyz@example.com - Fetch parcels by email, latest first
+// GET parcels by user email (latest first)
 app.get("/parcels", async (req, res) => {
   try {
     const email = req.query.email;
@@ -65,14 +104,12 @@ app.get("/parcels", async (req, res) => {
 
     res.status(200).json(parcels);
   } catch (error) {
-    console.error("Fetch Parcel Error:", error);
+    console.error(" Fetch Parcel Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-//delete a parcel
-const { ObjectId } = require("mongodb");
-
+// DELETE a parcel by ID
 app.delete("/parcels/:id", async (req, res) => {
   const id = req.params.id;
 
@@ -80,23 +117,22 @@ app.delete("/parcels/:id", async (req, res) => {
     const result = await parcelCollection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 1) {
-      res
-        .status(200)
-        .json({ message: "Parcel deleted successfully", deletedCount: 1 });
+      res.status(200).json({ message: " Parcel deleted", deletedCount: 1 });
     } else {
       res.status(404).json({ error: "Parcel not found", deletedCount: 0 });
     }
   } catch (err) {
-    console.error("Delete Error:", err);
+    console.error(" Delete Error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Health check
 app.get("/", (req, res) => {
-  res.send("Parcel API Server Running");
+  res.send(" Parcel API Server Running");
 });
 
+// Start server
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(` Server running on port ${port}`);
 });
