@@ -3,8 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const Stripe = require("stripe");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const stripe = Stripe(process.env.PAYMENT_KEY);
 
+const stripe = Stripe(process.env.PAYMENT_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -22,41 +22,107 @@ const client = new MongoClient(process.env.MONGO_URI, {
 });
 
 let parcelCollection;
+let paymentCollection;
 
 async function run() {
   try {
     await client.connect();
     const db = client.db("parcelDB");
     parcelCollection = db.collection("parcels");
-    paymentCollection = db.collection("payment");
-    console.log("Connected to MongoDB");
+    paymentCollection = db.collection("payments"); //  Corrected
+    console.log(" Connected to MongoDB");
   } catch (err) {
     console.error(" MongoDB Connection Error:", err);
   }
 }
 run().catch(console.dir);
 
+//
 // ========== Routes ==========
-// Create PaymentIntent
+//
+
+//  1. Create Payment Intent
 app.post("/create-payment-intent", async (req, res) => {
   const { amount } = req.body;
 
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Stripe requires amount in cents
+      amount: amount * 100, // Stripe uses cents
       currency: "usd",
       payment_method_types: ["card"],
     });
 
-    res.send({
-      clientSecret: paymentIntent.client_secret,
-    });
+    res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET parcel by ID
+//  2. Record Payment & Update Parcel
+app.post("/payments", async (req, res) => {
+  const {
+    parcelId,
+    email,
+    transactionId,
+    amount,
+    paymentMethod,
+    paymentTime,
+  } = req.body;
+
+  if (!parcelId || !email || !transactionId || !amount) {
+    return res.status(400).json({ error: "Missing required payment fields" });
+  }
+
+  try {
+    // 1. Save payment record
+    const paymentDoc = {
+      parcelId: new ObjectId(parcelId),
+      userEmail: email,
+      transactionId,
+      amount,
+      paymentMethod,
+      paymentTime: new Date(paymentTime || Date.now()),
+    };
+
+    const result = await paymentCollection.insertOne(paymentDoc);
+
+    // 2. Mark parcel as paid
+    await parcelCollection.updateOne(
+      { _id: new ObjectId(parcelId) },
+      { $set: { payment_status: "paid" } }
+    );
+
+    res.status(200).json({
+      message: "✅ Payment recorded & parcel updated",
+      insertedId: result.insertedId,
+    });
+  } catch (err) {
+    console.error(" Payment record error:", err);
+    res.status(500).json({ error: "Failed to save payment info" });
+  }
+});
+
+//  3. Get All Payments by User Email
+app.get("/payments", async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required" });
+  }
+
+  try {
+    const payments = await paymentCollection
+      .find({ userEmail: email })
+      .sort({ paymentTime: -1 }) // Latest first
+      .toArray();
+
+    res.status(200).json(payments);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch payment history" });
+  }
+});
+
+// 4. Get Parcel by ID
 app.get("/parcels/:id", async (req, res) => {
   const id = req.params.id;
 
@@ -73,84 +139,23 @@ app.get("/parcels/:id", async (req, res) => {
     res.status(500).send({ error: "Failed to fetch parcel" });
   }
 });
-// POST /payments
-app.post("/payments", async (req, res) => {
-  const {
-    parcelId,
-    userEmail,
-    transactionId,
-    amount,
-    paymentMethod,
-    paymentTime,
-  } = req.body;
 
-  try {
-    // Save to payments collection
-    const paymentDoc = {
-      parcelId: new ObjectId(parcelId),
-      userEmail,
-      transactionId,
-      amount,
-      paymentMethod,
-      paymentTimeString : paymentTime || new Date().toISOString(),
-      paymentTime: paymentTime || new Date(),
-    };
-
-    const result = await db.collection("payments").insertOne(paymentDoc);
-
-    // Update parcel's payment status
-    const updateResult = await db.collection("parcels").updateOne(
-      { _id: new ObjectId(parcelId) },
-      { $set: { payment_status: "paid" } }
-    );
-
-    res.status(200).json({
-      message: "Payment recorded & parcel updated",
-      insertedId: result.insertedId,
-    });
-  } catch (err) {
-    console.error("Payment record error:", err);
-    res.status(500).json({ error: "Failed to save payment info" });
-  }
-});
-
-// GET /payments?email=user@example.com
-app.get("/payments", async (req, res) => {
-  const email = req.query.email;
-
-  if (!email) {
-    return res.status(400).json({ error: "User email is required" });
-  }
-
-  try {
-    const payments = await db
-      .collection("payments")
-      .find({ userEmail: email })
-      .sort({ paymentTime: -1 }) // latest first
-      .toArray();
-
-    res.status(200).json(payments);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch payment history" });
-  }
-});
-
-// POST - Create a new parcel
+// 5. Create New Parcel
 app.post("/parcels", async (req, res) => {
   try {
     const parcelData = req.body;
     const result = await parcelCollection.insertOne(parcelData);
     res.status(201).send({
-      message: " Parcel saved successfully",
+      message: "Parcel saved successfully",
       insertedId: result.insertedId,
     });
   } catch (err) {
-    console.error(" Parcel Save Error:", err);
+    console.error("Parcel Save Error:", err);
     res.status(500).send({ message: "Failed to save parcel", error: err });
   }
 });
 
-// GET parcels by user email (latest first)
+// 6. Get Parcels by User Email
 app.get("/parcels", async (req, res) => {
   try {
     const email = req.query.email;
@@ -171,7 +176,7 @@ app.get("/parcels", async (req, res) => {
   }
 });
 
-// DELETE a parcel by ID
+// 7. Delete Parcel by ID
 app.delete("/parcels/:id", async (req, res) => {
   const id = req.params.id;
 
@@ -179,7 +184,7 @@ app.delete("/parcels/:id", async (req, res) => {
     const result = await parcelCollection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 1) {
-      res.status(200).json({ message: " Parcel deleted", deletedCount: 1 });
+      res.status(200).json({ message: "🗑️ Parcel deleted", deletedCount: 1 });
     } else {
       res.status(404).json({ error: "Parcel not found", deletedCount: 0 });
     }
@@ -191,7 +196,7 @@ app.delete("/parcels/:id", async (req, res) => {
 
 // Health check
 app.get("/", (req, res) => {
-  res.send(" Parcel API Server Running");
+  res.send("Parcel API Server Running");
 });
 
 // Start server
