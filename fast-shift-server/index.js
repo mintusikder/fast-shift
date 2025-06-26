@@ -28,8 +28,10 @@ async function run() {
   try {
     await client.connect();
     const db = client.db("parcelDB");
+
     parcelCollection = db.collection("parcels");
-    paymentCollection = db.collection("payments"); //  Corrected
+    paymentCollection = db.collection("payments");
+
     console.log(" Connected to MongoDB");
   } catch (err) {
     console.error(" MongoDB Connection Error:", err);
@@ -37,28 +39,31 @@ async function run() {
 }
 run().catch(console.dir);
 
-//
-// ========== Routes ==========
-//
+// ================= ROUTES ===================
 
-//  1. Create Payment Intent
+// 1. Stripe: Create Payment Intent
 app.post("/create-payment-intent", async (req, res) => {
   const { amount } = req.body;
 
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ error: "Invalid amount" });
+  }
+
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Stripe uses cents
+      amount: Math.round(amount * 100), // convert to cents
       currency: "usd",
       payment_method_types: ["card"],
     });
 
     res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
+    console.error("Stripe PaymentIntent Error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-//  2. Record Payment & Update Parcel
+// 2. Stripe: Handle Payment Record
 app.post("/payments", async (req, res) => {
   const {
     parcelId,
@@ -69,12 +74,11 @@ app.post("/payments", async (req, res) => {
     paymentTime,
   } = req.body;
 
-  if (!parcelId || !email || !transactionId || !amount) {
-    return res.status(400).json({ error: "Missing required payment fields" });
+  if (!parcelId || !email || !transactionId || !amount || !paymentMethod) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    // 1. Save payment record
     const paymentDoc = {
       parcelId: new ObjectId(parcelId),
       userEmail: email,
@@ -86,38 +90,38 @@ app.post("/payments", async (req, res) => {
 
     const result = await paymentCollection.insertOne(paymentDoc);
 
-    // 2. Mark parcel as paid
     await parcelCollection.updateOne(
       { _id: new ObjectId(parcelId) },
       { $set: { payment_status: "paid" } }
     );
 
     res.status(200).json({
-      message: "✅ Payment recorded & parcel updated",
+      message: " Payment recorded & parcel updated",
       insertedId: result.insertedId,
     });
   } catch (err) {
-    console.error(" Payment record error:", err);
+    console.error(" Payment Record Error:", err);
     res.status(500).json({ error: "Failed to save payment info" });
   }
 });
 
-//  3. Get All Payments by User Email
+// 3. Get Payment History by Email
 app.get("/payments", async (req, res) => {
   const email = req.query.email;
 
   if (!email) {
-    return res.status(400).json({ error: "User email is required" });
+    return res.status(400).json({ error: "Email is required" });
   }
 
   try {
     const payments = await paymentCollection
       .find({ userEmail: email })
-      .sort({ paymentTime: -1 }) // Latest first
+      .sort({ paymentTime: -1 }) // latest first
       .toArray();
 
     res.status(200).json(payments);
   } catch (err) {
+    console.error(" Fetch Payments Error:", err);
     res.status(500).json({ error: "Failed to fetch payment history" });
   }
 });
@@ -130,13 +134,13 @@ app.get("/parcels/:id", async (req, res) => {
     const parcel = await parcelCollection.findOne({ _id: new ObjectId(id) });
 
     if (!parcel) {
-      return res.status(404).send({ error: "Parcel not found" });
+      return res.status(404).json({ error: "Parcel not found" });
     }
 
-    res.send(parcel);
+    res.status(200).json(parcel);
   } catch (error) {
     console.error(" Parcel Fetch Error:", error);
-    res.status(500).send({ error: "Failed to fetch parcel" });
+    res.status(500).json({ error: "Failed to fetch parcel" });
   }
 });
 
@@ -144,35 +148,36 @@ app.get("/parcels/:id", async (req, res) => {
 app.post("/parcels", async (req, res) => {
   try {
     const parcelData = req.body;
+
     const result = await parcelCollection.insertOne(parcelData);
-    res.status(201).send({
-      message: "Parcel saved successfully",
+    res.status(201).json({
+      message: "Parcel created",
       insertedId: result.insertedId,
     });
   } catch (err) {
-    console.error("Parcel Save Error:", err);
-    res.status(500).send({ message: "Failed to save parcel", error: err });
+    console.error(" Parcel Create Error:", err);
+    res.status(500).json({ error: "Failed to create parcel" });
   }
 });
 
 // 6. Get Parcels by User Email
 app.get("/parcels", async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email query is required" });
+  }
+
   try {
-    const email = req.query.email;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email query is required" });
-    }
-
     const parcels = await parcelCollection
       .find({ created_by: email })
       .sort({ creation_date: -1 })
       .toArray();
 
     res.status(200).json(parcels);
-  } catch (error) {
-    console.error(" Fetch Parcel Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (err) {
+    console.error(" Fetch Parcels Error:", err);
+    res.status(500).json({ error: "Failed to fetch parcels" });
   }
 });
 
@@ -181,25 +186,31 @@ app.delete("/parcels/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
+    console.log("Attempting to delete parcel with ID:", id); 
+
     const result = await parcelCollection.deleteOne({ _id: new ObjectId(id) });
 
+    console.log("Delete result:", result);  
+
     if (result.deletedCount === 1) {
-      res.status(200).json({ message: "🗑️ Parcel deleted", deletedCount: 1 });
+      res.status(200).json({ message: "Parcel deleted", deletedCount: 1 });
     } else {
       res.status(404).json({ error: "Parcel not found", deletedCount: 0 });
     }
   } catch (err) {
-    console.error(" Delete Error:", err);
+    console.error("Delete error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Health check
+
+
+// 8. Health Check
 app.get("/", (req, res) => {
-  res.send("Parcel API Server Running");
+  res.send(" Parcel API Server Running");
 });
 
-// Start server
+// Start Server
 app.listen(port, () => {
   console.log(` Server running on port ${port}`);
 });
