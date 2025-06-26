@@ -30,7 +30,6 @@ const MyParcels = () => {
     console.log("Paying for parcel:", parcelId);
     navigate(`/dashboard/payment/${parcelId}`);
 
-    // OR use a modal, or integrate with Stripe/SSLCommerz
   };
 
   const handleView = (parcel) => {

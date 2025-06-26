@@ -1,13 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import toast from "react-hot-toast";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import useAuth from "../../../hooks/useAuth";
+
 const PaymentForm = () => {
   const stripe = useStripe();
   const elements = useElements();
   const { parcelId } = useParams();
+  const { user } = useAuth();
+  const [processing, setProcessing] = useState(false); //  add this state
+
+  // Fetch parcel data
   const { isPending, data: parcelInfo = {} } = useQuery({
     queryKey: ["parcel", parcelId],
     queryFn: async () => {
@@ -17,12 +23,11 @@ const PaymentForm = () => {
       return res.data;
     },
   });
-  if (isPending) {
-    return <p>Loading....</p>;
-  }
 
-  console.log(parcelInfo);
-  const amount = parcelInfo.cost
+  if (isPending) return <p>Loading...</p>;
+
+  const amount = parcelInfo.cost;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -31,18 +36,49 @@ const PaymentForm = () => {
     const card = elements.getElement(CardElement);
     if (!card) return;
 
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card,
-    });
+    setProcessing(true); // disable the button during processing
 
-    if (error) {
-      console.error("Stripe Error:", error.message);
-      toast.error(error.message);
-    } else {
-      console.log("Payment Method:", paymentMethod);
-      toast.success("Payment method created successfully.");
-      // TODO: Send paymentMethod.id to backend
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/create-payment-intent`,
+        { amount }
+      );
+
+      const clientSecret = res.data.clientSecret;
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card,
+          billing_details: {
+            name: user.displayName,
+            email: user.email,
+          },
+        },
+      });
+
+      if (result.error) {
+        console.error("Payment failed:", result.error.message);
+        toast.error(result.error.message);
+      } else if (result.paymentIntent.status === "succeeded") {
+        toast.success("Payment successful!");
+        const paymentInfo = {
+          parcelId,
+          email: user.email,
+          transactionId: result.paymentIntent.id,
+          amount,
+          paymentMethod: result.paymentIntent.payment_method_types[0],
+          paymentTime: new Date(),
+        };
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/payments`,
+          paymentInfo
+        );
+      }
+    } catch (error) {
+      console.error("Error during payment:", error);
+      toast.error("Something went wrong while processing payment.");
+    } finally {
+      setProcessing(false); //  enable again (optional — or redirect instead)
     }
   };
 
@@ -54,10 +90,10 @@ const PaymentForm = () => {
       <CardElement className="p-2 border rounded" />
       <button
         type="submit"
-        disabled={!stripe}
-        className="btn btn-primary w-full mt-4"
+        disabled={!stripe || processing} // disable if processing or Stripe not ready
+        className={`btn btn-primary w-full mt-4 ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
       >
-        Pay ${amount}
+        {processing ? "Processing..." : `Pay $${amount}`}
       </button>
     </form>
   );

@@ -2,7 +2,7 @@ import React from "react";
 import { FaEye, FaTrashAlt } from "react-icons/fa";
 import { Link } from "react-router";
 
-const ParcelTable = ({ parcels, onView, onDelete,onPay }) => {
+const ParcelTable = ({ parcels, onView, onDelete, onPay }) => {
   return (
     <div className="overflow-x-auto shadow  rounded-lg">
       <table className="table w-full">
@@ -50,10 +50,15 @@ const ParcelTable = ({ parcels, onView, onDelete,onPay }) => {
                   <FaTrashAlt />
                 </button>
                 <button
-                  className="btn btn-sm btn-success text-white"
                   onClick={() => onPay(parcel._id)}
+                  disabled={parcel.payment_status === "paid"}
+                  className={`btn btn-sm ${
+                    parcel.payment_status === "paid"
+                      ? "btn-disabled bg-gray-300 cursor-not-allowed"
+                      : "btn-primary"
+                  }`}
                 >
-                  Pay
+                  {parcel.payment_status === "paid" ? "Paid" : "Pay"}
                 </button>
               </td>
             </tr>
