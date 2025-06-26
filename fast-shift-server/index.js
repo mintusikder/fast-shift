@@ -28,6 +28,7 @@ async function run() {
     await client.connect();
     const db = client.db("parcelDB");
     parcelCollection = db.collection("parcels");
+    paymentCollection = db.collection("payment");
     console.log("Connected to MongoDB");
   } catch (err) {
     console.error(" MongoDB Connection Error:", err);
@@ -70,6 +71,67 @@ app.get("/parcels/:id", async (req, res) => {
   } catch (error) {
     console.error(" Parcel Fetch Error:", error);
     res.status(500).send({ error: "Failed to fetch parcel" });
+  }
+});
+// POST /payments
+app.post("/payments", async (req, res) => {
+  const {
+    parcelId,
+    userEmail,
+    transactionId,
+    amount,
+    paymentMethod,
+    paymentTime,
+  } = req.body;
+
+  try {
+    // Save to payments collection
+    const paymentDoc = {
+      parcelId: new ObjectId(parcelId),
+      userEmail,
+      transactionId,
+      amount,
+      paymentMethod,
+      paymentTimeString : paymentTime || new Date().toISOString(),
+      paymentTime: paymentTime || new Date(),
+    };
+
+    const result = await db.collection("payments").insertOne(paymentDoc);
+
+    // Update parcel's payment status
+    const updateResult = await db.collection("parcels").updateOne(
+      { _id: new ObjectId(parcelId) },
+      { $set: { payment_status: "paid" } }
+    );
+
+    res.status(200).json({
+      message: "Payment recorded & parcel updated",
+      insertedId: result.insertedId,
+    });
+  } catch (err) {
+    console.error("Payment record error:", err);
+    res.status(500).json({ error: "Failed to save payment info" });
+  }
+});
+
+// GET /payments?email=user@example.com
+app.get("/payments", async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).json({ error: "User email is required" });
+  }
+
+  try {
+    const payments = await db
+      .collection("payments")
+      .find({ userEmail: email })
+      .sort({ paymentTime: -1 }) // latest first
+      .toArray();
+
+    res.status(200).json(payments);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch payment history" });
   }
 });
 
