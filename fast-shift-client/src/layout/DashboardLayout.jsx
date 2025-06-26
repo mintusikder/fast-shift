@@ -1,5 +1,6 @@
 import React from "react";
-import { Outlet, Link } from "react-router";
+import { Outlet, Link } from "react-router"; 
+import { FaTachometerAlt, FaBoxOpen, FaMoneyCheckAlt, FaSearchLocation, FaUserEdit, FaPaperPlane } from "react-icons/fa";
 import FastShiftLogo from "../pages/Home/Shared/FastShiftLogo/FastShiftLogo";
 
 const DashboardLayout = () => {
@@ -40,16 +41,37 @@ const DashboardLayout = () => {
       <div className="drawer-side">
         <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
         <ul className="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-          {/* Sidebar menu items */}
-          <FastShiftLogo></FastShiftLogo>
+          <FastShiftLogo />
+
           <li>
-            <Link to="/dashboard">Dashboard Home</Link>
+            <Link to="/dashboard">
+              <FaTachometerAlt className="mr-2" /> Dashboard Home
+            </Link>
           </li>
           <li>
-            <Link to="my-parcels">My Parcels</Link>
+            <Link to="my-parcels">
+              <FaBoxOpen className="mr-2" /> My Parcels
+            </Link>
           </li>
           <li>
-            <Link to="send">Send Parcel</Link>
+            <Link to="payment-history">
+              <FaMoneyCheckAlt className="mr-2" /> Payment History
+            </Link>
+          </li>
+          <li>
+            <Link to="track">
+              <FaSearchLocation className="mr-2" /> Track a Package
+            </Link>
+          </li>
+          <li>
+            <Link to="profile">
+              <FaUserEdit className="mr-2" /> Update Profile
+            </Link>
+          </li>
+          <li>
+            <Link to="send-parcel">
+              <FaPaperPlane className="mr-2" /> Send Parcel
+            </Link>
           </li>
         </ul>
       </div>

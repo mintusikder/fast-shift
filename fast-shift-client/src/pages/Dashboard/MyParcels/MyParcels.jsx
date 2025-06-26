@@ -25,11 +25,9 @@ const MyParcels = () => {
       return res.data;
     },
   });
-  const onPay = (parcelId) => {
-    // Redirect user to payment page or trigger payment modal
-    console.log("Paying for parcel:", parcelId);
-    navigate(`/dashboard/payment/${parcelId}`);
 
+  const onPay = (parcelId) => {
+    navigate(`/dashboard/payment/${parcelId}`);
   };
 
   const handleView = (parcel) => {
@@ -41,6 +39,8 @@ const MyParcels = () => {
         <p><strong>Status:</strong> ${parcel.delivery_status}</p>
         <p><strong>Tracking ID:</strong> ${parcel.tracking_id}</p>
       `,
+      icon: "info",
+      confirmButtonText: "Close",
     });
   };
 
@@ -51,6 +51,7 @@ const MyParcels = () => {
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
     });
 
     if (confirm.isConfirmed) {
@@ -58,6 +59,7 @@ const MyParcels = () => {
         const res = await axios.delete(
           `${import.meta.env.VITE_API_URL}/parcels/${id}`
         );
+
         if (res.data.deletedCount === 1) {
           Swal.fire("Deleted!", "Parcel deleted successfully.", "success");
           refetch();
@@ -77,8 +79,8 @@ const MyParcels = () => {
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">My Parcels</h2>
       <ParcelTable
-        onPay={onPay}
         parcels={parcels}
+        onPay={onPay}
         onView={handleView}
         onDelete={handleDelete}
       />

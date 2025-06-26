@@ -10,6 +10,7 @@ import DashboardLayout from "../layout/DashboardLayout";
 import MyParcels from "../pages/Dashboard/MyParcels/MyParcels";
 import Login from "../pages/Authentication/Login";
 import Payment from "../pages/Dashboard/Payment/Payment";
+import PaymentHistory from "../pages/Dashboard/PaymentHistory/PaymentHistory";
 
 export const router = createBrowserRouter([
   {
@@ -24,16 +25,6 @@ export const router = createBrowserRouter([
         path: "/coverage",
         Component: Coverage,
         loader: () => fetch(`/districts.json`),
-      },
-
-      {
-        path: "/send-parcel",
-        loader: () => fetch(`/districts.json`),
-        element: (
-          <PrivateRoutes>
-            <SendParcel></SendParcel>
-          </PrivateRoutes>
-        ),
       },
     ],
   },
@@ -54,15 +45,28 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <DashboardLayout />,
+    element: <PrivateRoutes><DashboardLayout /></PrivateRoutes>,
     children: [
       {
         path: "my-parcels",
-        element: <MyParcels />,
+        Component: MyParcels,
       },
       {
         path: "payment/:parcelId",
-        element: <Payment></Payment>,
+        Component: Payment,
+      },
+      {
+        path: "payment-history",
+        Component: PaymentHistory,
+      },
+      {
+        path: "send-parcel",
+        loader: () => fetch(`/districts.json`),
+        element: (
+          <PrivateRoutes>
+            <SendParcel></SendParcel>
+          </PrivateRoutes>
+        ),
       },
     ],
   },

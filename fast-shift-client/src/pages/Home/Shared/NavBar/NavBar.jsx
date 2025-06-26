@@ -29,9 +29,6 @@ const NavBar = () => {
         <NavLink to="/coverage" className="hover:underline">
           Coverage
         </NavLink>
-        <NavLink to="/send-parcel" className="hover:underline">
-          send-parcel
-        </NavLink>
         {user && (
           <>
             <NavLink to="/dashboard" className=" hover:underline">

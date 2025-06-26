@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import toast from "react-hot-toast";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router"; //  import useNavigate
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
@@ -11,7 +11,8 @@ const PaymentForm = () => {
   const elements = useElements();
   const { parcelId } = useParams();
   const { user } = useAuth();
-  const [processing, setProcessing] = useState(false); //  add this state
+  const navigate = useNavigate(); //  initialize navigator
+  const [processing, setProcessing] = useState(false);
 
   // Fetch parcel data
   const { isPending, data: parcelInfo = {} } = useQuery({
@@ -36,7 +37,7 @@ const PaymentForm = () => {
     const card = elements.getElement(CardElement);
     if (!card) return;
 
-    setProcessing(true); // disable the button during processing
+    setProcessing(true);
 
     try {
       const res = await axios.post(
@@ -73,12 +74,15 @@ const PaymentForm = () => {
           `${import.meta.env.VITE_API_URL}/payments`,
           paymentInfo
         );
+
+        //  Redirect after successful payment
+        navigate("/dashboard/my-parcels");
       }
     } catch (error) {
       console.error("Error during payment:", error);
       toast.error("Something went wrong while processing payment.");
     } finally {
-      setProcessing(false); //  enable again (optional — or redirect instead)
+      setProcessing(false);
     }
   };
 
@@ -90,7 +94,7 @@ const PaymentForm = () => {
       <CardElement className="p-2 border rounded" />
       <button
         type="submit"
-        disabled={!stripe || processing} // disable if processing or Stripe not ready
+        disabled={!stripe || processing}
         className={`btn btn-primary w-full mt-4 ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         {processing ? "Processing..." : `Pay $${amount}`}
