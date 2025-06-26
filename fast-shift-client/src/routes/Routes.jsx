@@ -9,6 +9,7 @@ import SendParcel from "../pages/sendParcel/SendParcel";
 import DashboardLayout from "../layout/DashboardLayout";
 import MyParcels from "../pages/Dashboard/MyParcels/MyParcels";
 import Login from "../pages/Authentication/Login";
+import Payment from "../pages/Dashboard/Payment/Payment";
 
 export const router = createBrowserRouter([
   {
@@ -51,16 +52,18 @@ export const router = createBrowserRouter([
       },
     ],
   },
-{
-  path: "/dashboard",
-  element: <DashboardLayout />,
-  children: [
-    {
-      path: "my-parcels", 
-      element: <MyParcels />
-    }
-  ]
-}
-
-
+  {
+    path: "/dashboard",
+    element: <DashboardLayout />,
+    children: [
+      {
+        path: "my-parcels",
+        element: <MyParcels />,
+      },
+      {
+        path: "payment/:id",
+        element: <Payment></Payment>,
+      },
+    ],
+  },
 ]);

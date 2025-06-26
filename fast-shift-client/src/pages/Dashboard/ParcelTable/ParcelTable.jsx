@@ -1,7 +1,8 @@
 import React from "react";
 import { FaEye, FaTrashAlt } from "react-icons/fa";
+import { Link } from "react-router";
 
-const ParcelTable = ({ parcels, onView, onDelete }) => {
+const ParcelTable = ({ parcels, onView, onDelete,onPay }) => {
   return (
     <div className="overflow-x-auto shadow  rounded-lg">
       <table className="table w-full">
@@ -47,6 +48,12 @@ const ParcelTable = ({ parcels, onView, onDelete }) => {
                   onClick={() => onDelete(parcel._id)}
                 >
                   <FaTrashAlt />
+                </button>
+                <button
+                  className="btn btn-sm btn-success text-white"
+                  onClick={() => onPay(parcel._id)}
+                >
+                  Pay
                 </button>
               </td>
             </tr>
