@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router"; // fixed router import
 import useAuth from "../../hooks/useAuth";
 import SocialLogin from "./SocialLogin";
+import axios from "axios";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,30 +15,45 @@ const Register = () => {
   } = useForm();
   const location = useLocation();
   const navigate = useNavigate();
-  console.log(location);
   const from = location.state?.from || "/";
   const { createUser, updateUserProfile } = useAuth();
 
-  const onSubmit = (data) => {
-    console.log("Register Form Data:", data);
-    createUser(data.email, data.password)
-      .then((result) => {
-        navigate(from);
-        console.log("User created:", result.user);
-        //  Update user's displayName and photoURL
-        return updateUserProfile({
-          displayName: data.username,
-          photoURL: data.url,
-        });
-      })
-      .then(() => {
-        console.log("Profile updated");
-        // Navigate to homepage or show success toast here
-      })
-      .catch((error) => {
-        console.error("Registration Error:", error.message);
-      });
-  };
+const onSubmit = async (data) => {
+  try {
+    const imageFile = data.photo[0];
+    const formData = new FormData();
+    formData.append("image", imageFile); //  Key must be 'image'
+
+    // Use your VITE environment variable or fallback for testing
+    const apiKey = import.meta.env.VITE_IMAGE_UPLOAD_KEY;
+
+    const uploadRes = await axios.post(
+      `https://api.imgbb.com/1/upload?key=${apiKey}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    //  Correct way to get the image URL
+    const photoURL = uploadRes.data.data.url;
+
+    // Create user
+    const result = await createUser(data.email, data.password);
+
+    // Update user profile
+    await updateUserProfile({
+      displayName: data.username,
+      photoURL,
+    });
+
+    console.log("User created:", result.user);
+    navigate(from);
+  } catch (error) {
+    console.error("Registration Error:", error.response?.data || error.message);
+  }
+};
+
 
   return (
     <div className="w-full max-w-md mx-auto p-8 space-y-6 rounded-xl bg-white shadow-md text-gray-800">
@@ -56,9 +72,22 @@ const Register = () => {
             placeholder="Enter your name"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          {errors.username && (
-            <p className="text-red-600">{errors.username.message}</p>
-          )}
+          {errors.username && <p className="text-red-600">{errors.username.message}</p>}
+        </div>
+
+        {/* Profile Photo Upload */}
+        <div className="space-y-1 text-sm">
+          <label htmlFor="photo" className="block text-gray-700">
+            Profile Photo
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            id="photo"
+            {...register("photo", { required: "Profile photo is required" })}
+            className="w-full px-4 py-2 border rounded-md focus:outline-none"
+          />
+          {errors.photo && <p className="text-red-600">{errors.photo.message}</p>}
         </div>
 
         {/* Email */}
@@ -73,9 +102,7 @@ const Register = () => {
             placeholder="Enter your email"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          {errors.email && (
-            <p className="text-red-600">{errors.email.message}</p>
-          )}
+          {errors.email && <p className="text-red-600">{errors.email.message}</p>}
         </div>
 
         {/* Password */}
@@ -101,29 +128,9 @@ const Register = () => {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-[38px] cursor-pointer text-gray-600"
           >
-            {showPassword ? (
-              <AiOutlineEyeInvisible size={20} />
-            ) : (
-              <AiOutlineEye size={20} />
-            )}
+            {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
           </span>
-          {errors.password && (
-            <p className="text-red-600">{errors.password.message}</p>
-          )}
-        </div>
-
-        {/* Photo URL */}
-        <div className="space-y-1 text-sm">
-          <label htmlFor="url" className="block text-gray-700">
-            Photo URL
-          </label>
-          <input
-            type="url"
-            id="url"
-            {...register("url")}
-            placeholder="Enter your photo URL"
-            className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+          {errors.password && <p className="text-red-600">{errors.password.message}</p>}
         </div>
 
         <button
@@ -134,7 +141,7 @@ const Register = () => {
         </button>
       </form>
 
-      <SocialLogin></SocialLogin>
+      <SocialLogin />
 
       <p className="text-xs text-center text-gray-500">
         Already have an account?{" "}
