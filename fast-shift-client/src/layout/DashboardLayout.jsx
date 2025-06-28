@@ -1,6 +1,13 @@
 import React from "react";
-import { Outlet, Link } from "react-router"; 
-import { FaTachometerAlt, FaBoxOpen, FaMoneyCheckAlt, FaSearchLocation, FaUserEdit, FaPaperPlane } from "react-icons/fa";
+import { Outlet, Link } from "react-router";
+import {
+  FaTachometerAlt,
+  FaBoxOpen,
+  FaMoneyCheckAlt,
+  FaSearchLocation,
+  FaUserEdit,
+  FaPaperPlane,
+} from "react-icons/fa";
 import FastShiftLogo from "../pages/Home/Shared/FastShiftLogo/FastShiftLogo";
 
 const DashboardLayout = () => {
@@ -58,6 +65,7 @@ const DashboardLayout = () => {
               <FaMoneyCheckAlt className="mr-2" /> Payment History
             </Link>
           </li>
+
           <li>
             <Link to="track">
               <FaSearchLocation className="mr-2" /> Track a Package

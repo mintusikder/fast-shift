@@ -29,6 +29,9 @@ const NavBar = () => {
         <NavLink to="/coverage" className="hover:underline">
           Coverage
         </NavLink>
+        <NavLink to="/rider" className="hover:underline">
+          Be a Rider
+        </NavLink>
         {user && (
           <>
             <NavLink to="/dashboard" className=" hover:underline">
@@ -90,9 +93,7 @@ const NavBar = () => {
         <NavLink to="/about" className="block w-full hover:underline">
           About
         </NavLink>
-        <NavLink to="/send-parcel" className="block w-full hover:underline">
-          Send Parcel
-        </NavLink>
+
         <NavLink to="/coverage" className="block w-full hover:underline">
           Coverage
         </NavLink>

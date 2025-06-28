@@ -7,7 +7,6 @@ export const axiosSecure = axios.create({
 });
 const useAxiosSecure = () => {
   const { user } = useAuth();
-  console.log(user.accessToken)
   axiosSecure.interceptors.request.use(
     (config) => {
       config.headers.Authorization = `Bearer ${user.accessToken}`;
