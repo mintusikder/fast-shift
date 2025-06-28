@@ -25,7 +25,9 @@ const client = new MongoClient(process.env.MONGO_URI, {
 let parcelCollection;
 let paymentCollection;
 let userCollection;
-
+const verifyFbToken = async (req, res, next) => {
+  console.log("header in", req.headers.authorization);
+};
 async function run() {
   try {
     await client.connect();
@@ -34,6 +36,8 @@ async function run() {
     parcelCollection = db.collection("parcels");
     paymentCollection = db.collection("payments");
     userCollection = db.collection("users");
+
+    //custom middlewares
 
     console.log("Connected to MongoDB");
   } catch (err) {
@@ -103,9 +107,9 @@ app.post("/payments", async (req, res) => {
 });
 
 // 3. Get Payment History by Email
-app.get("/payments", async (req, res) => {
+app.get("/payments", verifyFbToken, async (req, res) => {
   const email = req.query.email;
-
+  console.log("Headers in Payment", req.headers);
   if (!email) {
     return res.status(400).json({ error: "Email is required" });
   }
