@@ -21,8 +21,10 @@ const client = new MongoClient(process.env.MONGO_URI, {
   },
 });
 
+// Declare collections here
 let parcelCollection;
 let paymentCollection;
+let userCollection;
 
 async function run() {
   try {
@@ -31,10 +33,11 @@ async function run() {
 
     parcelCollection = db.collection("parcels");
     paymentCollection = db.collection("payments");
+    userCollection = db.collection("users");
 
-    console.log(" Connected to MongoDB");
+    console.log("Connected to MongoDB");
   } catch (err) {
-    console.error(" MongoDB Connection Error:", err);
+    console.error("MongoDB Connection Error:", err);
   }
 }
 run().catch(console.dir);
@@ -65,14 +68,8 @@ app.post("/create-payment-intent", async (req, res) => {
 
 // 2. Stripe: Handle Payment Record
 app.post("/payments", async (req, res) => {
-  const {
-    parcelId,
-    email,
-    transactionId,
-    amount,
-    paymentMethod,
-    paymentTime,
-  } = req.body;
+  const { parcelId, email, transactionId, amount, paymentMethod, paymentTime } =
+    req.body;
 
   if (!parcelId || !email || !transactionId || !amount || !paymentMethod) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -96,11 +93,11 @@ app.post("/payments", async (req, res) => {
     );
 
     res.status(200).json({
-      message: " Payment recorded & parcel updated",
+      message: "Payment recorded & parcel updated",
       insertedId: result.insertedId,
     });
   } catch (err) {
-    console.error(" Payment Record Error:", err);
+    console.error("Payment Record Error:", err);
     res.status(500).json({ error: "Failed to save payment info" });
   }
 });
@@ -121,7 +118,7 @@ app.get("/payments", async (req, res) => {
 
     res.status(200).json(payments);
   } catch (err) {
-    console.error(" Fetch Payments Error:", err);
+    console.error("Fetch Payments Error:", err);
     res.status(500).json({ error: "Failed to fetch payment history" });
   }
 });
@@ -139,7 +136,7 @@ app.get("/parcels/:id", async (req, res) => {
 
     res.status(200).json(parcel);
   } catch (error) {
-    console.error(" Parcel Fetch Error:", error);
+    console.error("Parcel Fetch Error:", error);
     res.status(500).json({ error: "Failed to fetch parcel" });
   }
 });
@@ -155,7 +152,7 @@ app.post("/parcels", async (req, res) => {
       insertedId: result.insertedId,
     });
   } catch (err) {
-    console.error(" Parcel Create Error:", err);
+    console.error("Parcel Create Error:", err);
     res.status(500).json({ error: "Failed to create parcel" });
   }
 });
@@ -176,21 +173,38 @@ app.get("/parcels", async (req, res) => {
 
     res.status(200).json(parcels);
   } catch (err) {
-    console.error(" Fetch Parcels Error:", err);
+    console.error("Fetch Parcels Error:", err);
     res.status(500).json({ error: "Failed to fetch parcels" });
   }
 });
 
-// 7. Delete Parcel by ID
+// 7. User data post (registration)
+app.post("/users", async (req, res) => {
+  const user = req.body;
+
+  try {
+    const existing = await userCollection.findOne({ email: user.email });
+    if (existing) {
+      return res.status(200).send({ message: "User already exists" });
+    }
+    const result = await userCollection.insertOne(user);
+    res.status(201).send(result);
+  } catch (error) {
+    console.error("User Save Error:", error);
+    res.status(500).send({ error: "Failed to save user" });
+  }
+});
+
+// 8. Delete Parcel by ID
 app.delete("/parcels/:id", async (req, res) => {
   const id = req.params.id;
 
   try {
-    console.log("Attempting to delete parcel with ID:", id); 
+    console.log("Attempting to delete parcel with ID:", id);
 
     const result = await parcelCollection.deleteOne({ _id: new ObjectId(id) });
 
-    console.log("Delete result:", result);  
+    console.log("Delete result:", result);
 
     if (result.deletedCount === 1) {
       res.status(200).json({ message: "Parcel deleted", deletedCount: 1 });
@@ -203,14 +217,12 @@ app.delete("/parcels/:id", async (req, res) => {
   }
 });
 
-
-
-// 8. Health Check
+// 9. Health Check
 app.get("/", (req, res) => {
-  res.send(" Parcel API Server Running");
+  res.send("Parcel API Server Running");
 });
 
 // Start Server
 app.listen(port, () => {
-  console.log(` Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
