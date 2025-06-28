@@ -1,7 +1,7 @@
 import React from "react";
 import useAuth from "../../../hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { axiosSecure } from "../../../hooks/useAxiosSecure";
 
 const PaymentHistory = () => {
   const { user } = useAuth();
@@ -10,8 +10,8 @@ const PaymentHistory = () => {
     queryKey: ["payment", user?.email],
     enabled: !!user?.email,
     queryFn: async () => {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/payments?email=${user.email}`
+      const res = await axiosSecure.get(
+        `/payments?email=${user.email}`
       );
       return res.data;
     },

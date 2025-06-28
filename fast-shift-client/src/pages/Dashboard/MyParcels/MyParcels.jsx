@@ -1,11 +1,11 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
 
 import Swal from "sweetalert2";
 import ParcelTable from "../ParcelTable/ParcelTable";
 import { useNavigate } from "react-router";
+import { axiosSecure } from "../../../hooks/useAxiosSecure";
 
 const MyParcels = () => {
   const { user } = useAuth();
@@ -19,9 +19,7 @@ const MyParcels = () => {
     queryKey: ["my_parcels", user?.email],
     enabled: !!user?.email,
     queryFn: async () => {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/parcels?email=${user.email}`
-      );
+      const res = await axiosSecure.get(`/parcels?email=${user.email}`);
       return res.data;
     },
   });
@@ -56,9 +54,7 @@ const MyParcels = () => {
 
     if (confirm.isConfirmed) {
       try {
-        const res = await axios.delete(
-          `${import.meta.env.VITE_API_URL}/parcels/${id}`
-        );
+        const res = await axiosSecure.delete(`/parcels/${id}`);
 
         if (res.data.deletedCount === 1) {
           Swal.fire("Deleted!", "Parcel deleted successfully.", "success");

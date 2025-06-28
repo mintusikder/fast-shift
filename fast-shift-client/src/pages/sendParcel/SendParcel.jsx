@@ -1,9 +1,9 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import Swal from "sweetalert2";
 import { useLoaderData } from "react-router";
 import useAuth from "../../hooks/useAuth";
+import { axiosSecure } from "../../hooks/useAxiosSecure";
 
 const SendParcel = () => {
   const { user } = useAuth();
@@ -76,7 +76,7 @@ const SendParcel = () => {
     };
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/parcels`, payload);
+      await axiosSecure.post(`/parcels`, payload);
       Swal.fire("Success!", `Parcel submitted! Tracking ID: ${payload.tracking_id}`, "success");
       reset();
     } catch (error) {
