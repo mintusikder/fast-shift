@@ -18,42 +18,47 @@ const Register = () => {
   const from = location.state?.from || "/";
   const { createUser, updateUserProfile } = useAuth();
 
-const onSubmit = async (data) => {
-  try {
-    const imageFile = data.photo[0];
-    const formData = new FormData();
-    formData.append("image", imageFile); //  Key must be 'image'
+  const onSubmit = async (data) => {
+    try {
+      const imageFile = data.photo[0];
+      const formData = new FormData();
+      formData.append("image", imageFile);
 
-    // Use your VITE environment variable or fallback for testing
-    const apiKey = import.meta.env.VITE_IMAGE_UPLOAD_KEY;
+      const apiKey = import.meta.env.VITE_IMAGE_UPLOAD_KEY;
+      const uploadRes = await axios.post(
+        `https://api.imgbb.com/1/upload?key=${apiKey}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-    const uploadRes = await axios.post(
-      `https://api.imgbb.com/1/upload?key=${apiKey}`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      }
-    );
+      const photoURL = uploadRes?.data?.data?.url;
 
-    //  Correct way to get the image URL
-    const photoURL = uploadRes.data.data.url;
+      // 1. Create Firebase user
+      const result = await createUser(data.email, data.password);
+      console.log(result);
+      // 2. Update profile
+      await updateUserProfile({ displayName: data.username, photoURL });
 
-    // Create user
-    const result = await createUser(data.email, data.password);
+      // 3. Save to your DB
+      await axios.post("http://localhost:5000/users", {
+        email: data.email,
+        displayName: data.username,
+        photoURL,
+        role: "user",
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        status: "active",
+      });
 
-    // Update user profile
-    await updateUserProfile({
-      displayName: data.username,
-      photoURL,
-    });
-
-    console.log("User created:", result.user);
-    navigate(from);
-  } catch (error) {
-    console.error("Registration Error:", error.response?.data || error.message);
-  }
-};
-
+      console.log("User created and saved to DB");
+      navigate(from);
+    } catch (error) {
+      console.error(
+        "Registration Error:",
+        error.response?.data || error.message
+      );
+    }
+  };
 
   return (
     <div className="w-full max-w-md mx-auto p-8 space-y-6 rounded-xl bg-white shadow-md text-gray-800">
@@ -72,7 +77,9 @@ const onSubmit = async (data) => {
             placeholder="Enter your name"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          {errors.username && <p className="text-red-600">{errors.username.message}</p>}
+          {errors.username && (
+            <p className="text-red-600">{errors.username.message}</p>
+          )}
         </div>
 
         {/* Profile Photo Upload */}
@@ -87,7 +94,9 @@ const onSubmit = async (data) => {
             {...register("photo", { required: "Profile photo is required" })}
             className="w-full px-4 py-2 border rounded-md focus:outline-none"
           />
-          {errors.photo && <p className="text-red-600">{errors.photo.message}</p>}
+          {errors.photo && (
+            <p className="text-red-600">{errors.photo.message}</p>
+          )}
         </div>
 
         {/* Email */}
@@ -102,7 +111,9 @@ const onSubmit = async (data) => {
             placeholder="Enter your email"
             className="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
           />
-          {errors.email && <p className="text-red-600">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="text-red-600">{errors.email.message}</p>
+          )}
         </div>
 
         {/* Password */}
@@ -128,9 +139,15 @@ const onSubmit = async (data) => {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-[38px] cursor-pointer text-gray-600"
           >
-            {showPassword ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
+            {showPassword ? (
+              <AiOutlineEyeInvisible size={20} />
+            ) : (
+              <AiOutlineEye size={20} />
+            )}
           </span>
-          {errors.password && <p className="text-red-600">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-red-600">{errors.password.message}</p>
+          )}
         </div>
 
         <button

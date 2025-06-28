@@ -1,22 +1,37 @@
 import React from "react";
 import useAuth from "../../hooks/useAuth";
 import { useLocation, useNavigate } from "react-router";
-// import { useNavigate } from "react-router";
+import axios from "axios";
 
 const SocialLogin = () => {
   const { googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || "/";
-  const handleGoogleSignIn = () => {
-    googleLogin()
-      .then((result) => {
-        console.log("Google Login Success:", result.user);
-        navigate(from);
-      })
-      .catch((error) => {
-        console.error("Google Login Error:", error.message);
-      });
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await googleLogin();
+      console.log("Google Login Success:", result.user);
+
+      const user = result.user;
+      const userInfo = {
+        email: user.email,
+        displayName: user.displayName || "No Name",
+        photoURL: user.photoURL || "",
+        role: "user",
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        status: "active",
+      };
+
+      // Send user info to backend to save in DB
+      await axios.post("http://localhost:5000/users", userInfo);
+
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error("Google Login Error:", error.message);
+    }
   };
 
   return (
