@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const Stripe = require("stripe");
+const admin = require("firebase-admin");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const stripe = Stripe(process.env.PAYMENT_KEY);
@@ -21,23 +22,38 @@ const client = new MongoClient(process.env.MONGO_URI, {
   },
 });
 
-// Declare collections here
-let parcelCollection;
-let paymentCollection;
-let userCollection;
+const serviceAccount = require("./firebase-admin-key.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+//custom middlewares
 const verifyFbToken = async (req, res, next) => {
-  console.log("header in", req.headers.authorization);
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unAuthorization access" });
+  }
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "unAuthorization access" });
+  }
+  //verify token
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.decoded = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).send({ message: "forbidden access" });
+  }
 };
 async function run() {
   try {
     await client.connect();
     const db = client.db("parcelDB");
-
     parcelCollection = db.collection("parcels");
     paymentCollection = db.collection("payments");
     userCollection = db.collection("users");
-
-    //custom middlewares
 
     console.log("Connected to MongoDB");
   } catch (err) {
@@ -162,9 +178,11 @@ app.post("/parcels", async (req, res) => {
 });
 
 // 6. Get Parcels by User Email
-app.get("/parcels", async (req, res) => {
+app.get("/parcels", verifyFbToken, async (req, res) => {
   const email = req.query.email;
-
+  if (req.query.email !== email) {
+    return res.status(403).send({ message: "forbidden access" });
+  }
   if (!email) {
     return res.status(400).json({ error: "Email query is required" });
   }
