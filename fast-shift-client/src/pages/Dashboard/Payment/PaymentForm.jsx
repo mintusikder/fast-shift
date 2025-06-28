@@ -3,8 +3,8 @@ import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import toast from "react-hot-toast";
 import { useParams, useNavigate } from "react-router"; //  import useNavigate
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
+import { axiosSecure } from "../../../hooks/useAxiosSecure";
 
 const PaymentForm = () => {
   const stripe = useStripe();
@@ -18,8 +18,8 @@ const PaymentForm = () => {
   const { isPending, data: parcelInfo = {} } = useQuery({
     queryKey: ["parcel", parcelId],
     queryFn: async () => {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/parcels/${parcelId}`
+      const res = await axiosSecure.get(
+        `/parcels/${parcelId}`
       );
       return res.data;
     },
@@ -40,8 +40,8 @@ const PaymentForm = () => {
     setProcessing(true);
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/create-payment-intent`,
+      const res = await axiosSecure.post(
+        `/create-payment-intent`,
         { amount }
       );
 
@@ -70,8 +70,8 @@ const PaymentForm = () => {
           paymentMethod: result.paymentIntent.payment_method_types[0],
           paymentTime: new Date(),
         };
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/payments`,
+        await axiosSecure.post(
+          `/payments`,
           paymentInfo
         );
 

@@ -1,24 +1,27 @@
 import React from "react";
 import useAuth from "../../../hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { axiosSecure } from "../../../hooks/useAxiosSecure";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const PaymentHistory = () => {
   const { user } = useAuth();
-
-  const { data: payments = [], isLoading, isError } = useQuery({
+  const axiosSecure = useAxiosSecure();
+  const {
+    data: payments = [],
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["payment", user?.email],
     enabled: !!user?.email,
     queryFn: async () => {
-      const res = await axiosSecure.get(
-        `/payments?email=${user.email}`
-      );
+      const res = await axiosSecure.get(`/payments?email=${user.email}`);
       return res.data;
     },
   });
 
   if (isLoading) return <p className="p-4">Loading payment history...</p>;
-  if (isError) return <p className="p-4 text-red-500">Failed to load payment history.</p>;
+  if (isError)
+    return <p className="p-4 text-red-500">Failed to load payment history.</p>;
 
   return (
     <div className="p-6">
