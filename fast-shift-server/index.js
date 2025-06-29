@@ -277,10 +277,25 @@ app.patch("/riders/:id", async (req, res) => {
   const { status } = req.body;
 
   try {
+    // 1. Find rider to get email
+    const rider = await riderCollection.findOne({ _id: new ObjectId(id) });
+    if (!rider) {
+      return res.status(404).json({ error: "Rider not found" });
+    }
+
+    // 2. Update rider status
     const result = await riderCollection.updateOne(
       { _id: new ObjectId(id) },
       { $set: { status } }
     );
+
+    // 3. If status is active, update user role to rider
+    if (status === "active") {
+      await userCollection.updateOne(
+        { email: rider.email },
+        { $set: { role: "rider" } }
+      );
+    }
 
     res.send({
       message: "Rider status updated",
@@ -292,17 +307,19 @@ app.patch("/riders/:id", async (req, res) => {
   }
 });
 
-//  GET all active riders
+
+// GET all active riders
 app.get("/riders/active", async (req, res) => {
   try {
-    const activeRiders = await riderCollection.find({ status: "approved" }).toArray();
-    res.send(activeRiders);
+    const activeRiders = await riderCollection
+      .find({ status: "active" })
+      .toArray();
+    res.status(200).send(activeRiders);
   } catch (error) {
     console.error("Failed to fetch active riders", error);
     res.status(500).send({ error: "Failed to fetch active riders" });
   }
 });
-
 
 // 9. Health Check
 app.get("/", (req, res) => {
