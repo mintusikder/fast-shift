@@ -1,13 +1,15 @@
+import React from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { useLoaderData } from "react-router";
+
 
 import useAuth from "../../../hooks/useAuth";
 import { axiosSecure } from "../../../hooks/useAxiosSecure";
 
 const BeARider = () => {
   const { user } = useAuth();
-  const districtData = useLoaderData();
+  const districtData = useLoaderData(); // array of { region, district, covered_area, ... }
 
   const {
     register,
@@ -17,12 +19,20 @@ const BeARider = () => {
     formState: { errors },
   } = useForm();
 
+  const selectedRegion = watch("region");
   const selectedDistrict = watch("district");
 
-  // Safe service center fetcher
+  // Extract unique regions
+  const regions = [...new Set(districtData.map((d) => d.region))];
+
+  // Get districts for selected region
+  const districts = districtData
+    .filter((d) => d.region === selectedRegion)
+    .map((d) => d.district);
+
+  // Get service centers for selected district
   const getServiceCenters = (districtName) => {
-    if (!districtName) return [];
-    const found = districtData?.find((d) => d.district === districtName);
+    const found = districtData.find((d) => d.district === districtName);
     return found?.covered_area || [];
   };
 
@@ -36,6 +46,7 @@ const BeARider = () => {
           <p><strong>Age:</strong> ${data.age}</p>
           <p><strong>Region:</strong> ${data.region}</p>
           <p><strong>District:</strong> ${data.district}</p>
+          <p><strong>Service Center:</strong> ${data.serviceCenter}</p>
           <p><strong>Bike:</strong> ${data.bikeBrand} (${data.bikeNumber})</p>
         </div>
       `,
@@ -99,22 +110,16 @@ const BeARider = () => {
                   placeholder="Age"
                   className="input input-bordered w-full"
                 />
-                {errors.age && (
-                  <p className="text-red-500 text-sm">{errors.age.message}</p>
-                )}
+                {errors.age && <p className="text-red-500 text-sm">{errors.age.message}</p>}
               </div>
               <div>
                 <input
-                  {...register("phone", {
-                    required: "Phone number is required",
-                  })}
+                  {...register("phone", { required: "Phone number is required" })}
                   type="tel"
                   placeholder="Phone Number"
                   className="input input-bordered w-full"
                 />
-                {errors.phone && (
-                  <p className="text-red-500 text-sm">{errors.phone.message}</p>
-                )}
+                {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
               </div>
               <div>
                 <input
@@ -123,24 +128,16 @@ const BeARider = () => {
                   placeholder="National ID"
                   className="input input-bordered w-full"
                 />
-                {errors.nid && (
-                  <p className="text-red-500 text-sm">{errors.nid.message}</p>
-                )}
+                {errors.nid && <p className="text-red-500 text-sm">{errors.nid.message}</p>}
               </div>
               <div>
                 <input
-                  {...register("resume", {
-                    required: "Resume link is required",
-                  })}
+                  {...register("resume", { required: "Resume link is required" })}
                   type="url"
                   placeholder="Resume Link (e.g. Google Drive)"
                   className="input input-bordered w-full"
                 />
-                {errors.resume && (
-                  <p className="text-red-500 text-sm">
-                    {errors.resume.message}
-                  </p>
-                )}
+                {errors.resume && <p className="text-red-500 text-sm">{errors.resume.message}</p>}
               </div>
             </div>
           </fieldset>
@@ -151,43 +148,50 @@ const BeARider = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
                 <select
-                  {...register("district", {
-                    required: "District is required",
-                  })}
+                  {...register("region", { required: "Region is required" })}
                   className="select select-bordered w-full"
                 >
-                  <option value="">Select District</option>
-                  {districtData.map((d) => (
-                    <option key={d.district} value={d.district}>
-                      {d.district}
+                  <option value="">Select Region</option>
+                  {regions.map((region) => (
+                    <option key={region} value={region}>
+                      {region}
                     </option>
                   ))}
                 </select>
-                {errors.district && (
-                  <p className="text-red-500 text-sm">
-                    {errors.district.message}
-                  </p>
-                )}
+                {errors.region && <p className="text-red-500 text-sm">{errors.region.message}</p>}
               </div>
 
               <div>
                 <select
-                  {...register("serviceCenter", {
-                    required: "Service Center is required",
-                  })}
+                  {...register("district", { required: "District is required" })}
                   className="select select-bordered w-full"
+                  disabled={!selectedRegion}
+                >
+                  <option value="">Select District</option>
+                  {districts.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+                {errors.district && <p className="text-red-500 text-sm">{errors.district.message}</p>}
+              </div>
+
+              <div>
+                <select
+                  {...register("serviceCenter", { required: "Service Center is required" })}
+                  className="select select-bordered w-full"
+                  disabled={!selectedDistrict}
                 >
                   <option value="">Select Service Center</option>
-                  {(getServiceCenters(selectedDistrict) || []).map((center) => (
+                  {getServiceCenters(selectedDistrict).map((center) => (
                     <option key={center} value={center}>
                       {center}
                     </option>
                   ))}
                 </select>
                 {errors.serviceCenter && (
-                  <p className="text-red-500 text-sm">
-                    {errors.serviceCenter.message}
-                  </p>
+                  <p className="text-red-500 text-sm">{errors.serviceCenter.message}</p>
                 )}
               </div>
 
@@ -197,11 +201,7 @@ const BeARider = () => {
                   placeholder="Your Address"
                   className="input input-bordered w-full"
                 />
-                {errors.address && (
-                  <p className="text-red-500 text-sm">
-                    {errors.address.message}
-                  </p>
-                )}
+                {errors.address && <p className="text-red-500 text-sm">{errors.address.message}</p>}
               </div>
             </div>
           </fieldset>
@@ -212,30 +212,22 @@ const BeARider = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
                 <input
-                  {...register("bikeBrand", {
-                    required: "Bike brand is required",
-                  })}
+                  {...register("bikeBrand", { required: "Bike brand is required" })}
                   placeholder="Bike Brand"
                   className="input input-bordered w-full"
                 />
                 {errors.bikeBrand && (
-                  <p className="text-red-500 text-sm">
-                    {errors.bikeBrand.message}
-                  </p>
+                  <p className="text-red-500 text-sm">{errors.bikeBrand.message}</p>
                 )}
               </div>
               <div>
                 <input
-                  {...register("bikeNumber", {
-                    required: "Registration number is required",
-                  })}
+                  {...register("bikeNumber", { required: "Registration number is required" })}
                   placeholder="Bike Registration Number"
                   className="input input-bordered w-full"
                 />
                 {errors.bikeNumber && (
-                  <p className="text-red-500 text-sm">
-                    {errors.bikeNumber.message}
-                  </p>
+                  <p className="text-red-500 text-sm">{errors.bikeNumber.message}</p>
                 )}
               </div>
             </div>

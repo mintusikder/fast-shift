@@ -1,34 +1,28 @@
-import React, { useEffect, useState } from "react";
-
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FaEye, FaCheck, FaTimes } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { axiosSecure } from "../../../hooks/useAxiosSecure";
 
+const fetchPendingRiders = async () => {
+  const res = await axiosSecure.get("/riders/pending");
+  return res.data;
+};
+
 const PendingRiders = () => {
-  const [riders, setRiders] = useState([]);
   const [selectedRider, setSelectedRider] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  // Fetch pending riders
-  useEffect(() => {
-    const fetchRiders = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await axiosSecure.get("/riders/pending");
-        setRiders(res.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load pending riders.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRiders();
-  }, []);
+  const {
+    data: riders = [],
+    isLoading,
+    isError,
+    refetch,
+    error,
+  } = useQuery({
+    queryKey: ["pendingRiders"],
+    queryFn: fetchPendingRiders,
+  });
 
-  // Approve or Cancel
   const handleStatusUpdate = async (id, newStatus) => {
     let confirmText =
       newStatus === "approved"
@@ -37,7 +31,6 @@ const PendingRiders = () => {
         ? "cancel"
         : newStatus;
 
-    // Confirm cancel with extra prompt
     if (newStatus === "cancelled") {
       const cancelConfirm = await Swal.fire({
         title: "Are you sure?",
@@ -49,24 +42,21 @@ const PendingRiders = () => {
       if (!cancelConfirm.isConfirmed) return;
     }
 
+    const confirm = await Swal.fire({
+      title: `Are you sure?`,
+      text: `You are about to ${confirmText} this application.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+    });
+
+    if (!confirm.isConfirmed) return;
+
     try {
-      const confirm = await Swal.fire({
-        title: `Are you sure?`,
-        text: `You are about to ${confirmText} this application.`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-      });
-
-      if (confirm.isConfirmed) {
-        await axiosSecure.patch(`/riders/${id}`, {
-          status: newStatus,
-        });
-
-        setRiders((prev) => prev.filter((rider) => rider._id !== id));
-        setSelectedRider(null);
-        Swal.fire("Success", `Rider ${newStatus}`, "success");
-      }
+      await axiosSecure.patch(`/riders/${id}`, { status: newStatus });
+      setSelectedRider(null);
+      Swal.fire("Success", `Rider ${newStatus}`, "success");
+      refetch(); // refresh list
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to update rider status", "error");
@@ -77,10 +67,10 @@ const PendingRiders = () => {
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Pending Riders</h2>
 
-      {loading && <p>Loading riders...</p>}
-      {error && <p className="text-error mb-4">{error}</p>}
+      {isLoading && <p>Loading riders...</p>}
+      {isError && <p className="text-error mb-4">{error?.message}</p>}
 
-      {!loading && !error && (
+      {!isLoading && !isError && (
         <div className="overflow-x-auto">
           <table className="table table-zebra w-full">
             <thead>
@@ -117,21 +107,18 @@ const PendingRiders = () => {
                         setSelectedRider(rider);
                         window.scrollTo(0, 0);
                       }}
-                      aria-label={`View details for ${rider.name}`}
                     >
                       <FaEye />
                     </button>
                     <button
                       className="btn btn-sm btn-success"
                       onClick={() => handleStatusUpdate(rider._id, "approved")}
-                      aria-label={`Approve rider ${rider.name}`}
                     >
                       <FaCheck />
                     </button>
                     <button
                       className="btn btn-sm btn-error"
                       onClick={() => handleStatusUpdate(rider._id, "cancelled")}
-                      aria-label={`Cancel rider ${rider.name}`}
                     >
                       <FaTimes />
                     </button>
@@ -143,52 +130,28 @@ const PendingRiders = () => {
         </div>
       )}
 
-      {/* Rider Details Modal */}
+      {/* Modal */}
       {selectedRider && (
         <dialog
           open
           className="modal"
-          aria-modal="true"
-          aria-labelledby="rider-info-title"
           onClick={(e) => {
             if (e.target === e.currentTarget) setSelectedRider(null);
           }}
         >
           <div className="modal-box w-11/12 max-w-2xl">
-            <h3 id="rider-info-title" className="font-bold text-lg">
-              Rider Information
-            </h3>
+            <h3 className="font-bold text-lg">Rider Information</h3>
             <div className="mt-4 space-y-2 max-h-96 overflow-y-auto">
-              <p>
-                <strong>Name:</strong> {selectedRider.name}
-              </p>
-              <p>
-                <strong>Email:</strong> {selectedRider.email}
-              </p>
-              <p>
-                <strong>Phone:</strong> {selectedRider.phone}
-              </p>
-              <p>
-                <strong>Age:</strong> {selectedRider.age}
-              </p>
-              <p>
-                <strong>NID:</strong> {selectedRider.nid}
-              </p>
-              <p>
-                <strong>Region:</strong> {selectedRider.region}
-              </p>
-              <p>
-                <strong>District:</strong> {selectedRider.district}
-              </p>
-              <p>
-                <strong>Bike Brand:</strong> {selectedRider.bikeBrand}
-              </p>
-              <p>
-                <strong>Bike Reg. No:</strong> {selectedRider.bikeRegNumber}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedRider.status}
-              </p>
+              <p><strong>Name:</strong> {selectedRider.name}</p>
+              <p><strong>Email:</strong> {selectedRider.email}</p>
+              <p><strong>Phone:</strong> {selectedRider.phone}</p>
+              <p><strong>Age:</strong> {selectedRider.age}</p>
+              <p><strong>NID:</strong> {selectedRider.nid}</p>
+              <p><strong>Region:</strong> {selectedRider.region}</p>
+              <p><strong>District:</strong> {selectedRider.district}</p>
+              <p><strong>Bike Brand:</strong> {selectedRider.bikeBrand}</p>
+              <p><strong>Bike Reg. No:</strong> {selectedRider.bikeNumber}</p>
+              <p><strong>Status:</strong> {selectedRider.status}</p>
               {selectedRider.resume && (
                 <p>
                   <strong>Resume:</strong>{" "}
