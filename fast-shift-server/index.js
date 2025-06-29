@@ -258,7 +258,7 @@ app.post("/riders", async (req, res) => {
   }
 });
 
-// ✅ GET /riders/pending
+//  GET /riders/pending
 app.get("/riders/pending", async (req, res) => {
   try {
     const pendingRiders = await riderCollection
@@ -271,7 +271,7 @@ app.get("/riders/pending", async (req, res) => {
   }
 });
 
-// ✅ PATCH /riders/:id
+//  PATCH /riders/:id
 app.patch("/riders/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -291,6 +291,18 @@ app.patch("/riders/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to update rider status" });
   }
 });
+
+//  GET all active riders
+app.get("/riders/active", async (req, res) => {
+  try {
+    const activeRiders = await riderCollection.find({ status: "approved" }).toArray();
+    res.send(activeRiders);
+  } catch (error) {
+    console.error("Failed to fetch active riders", error);
+    res.status(500).send({ error: "Failed to fetch active riders" });
+  }
+});
+
 
 // 9. Health Check
 app.get("/", (req, res) => {
