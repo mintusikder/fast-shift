@@ -5,6 +5,7 @@ const Stripe = require("stripe");
 const admin = require("firebase-admin");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
+
 const stripe = Stripe(process.env.PAYMENT_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
@@ -240,17 +241,56 @@ app.delete("/parcels/:id", async (req, res) => {
 });
 
  // POST /riders
-    app.post("/riders", async (req, res) => {
-      const data = req.body;
-      data.status = "pending";
-      data.createdAt = new Date();
+app.post("/riders", async (req, res) => {
+  const data = req.body;
+  data.status = "pending";
+  data.createdAt = new Date();
 
-      const result = await riderCollection.insertOne(data);
-      res.status(201).json({
-        message: "Rider application submitted",
-        insertedId: result.insertedId,
-      });
+  try {
+    const result = await riderCollection.insertOne(data);
+    res.status(201).json({
+      message: "Rider application submitted",
+      insertedId: result.insertedId,
     });
+  } catch (err) {
+    console.error("Failed to submit rider:", err);
+    res.status(500).json({ error: "Failed to submit rider application" });
+  }
+});
+
+// ✅ GET /riders/pending
+app.get("/riders/pending", async (req, res) => {
+  try {
+    const pendingRiders = await riderCollection
+      .find({ status: "pending" })
+      .toArray();
+    res.json(pendingRiders);
+  } catch (err) {
+    console.error("Failed to fetch pending riders:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ✅ PATCH /riders/:id
+app.patch("/riders/:id", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const result = await riderCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status } }
+    );
+
+    res.send({
+      message: "Rider status updated",
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (err) {
+    console.error("Rider status update error:", err);
+    res.status(500).json({ error: "Failed to update rider status" });
+  }
+});
 
 // 9. Health Check
 app.get("/", (req, res) => {
