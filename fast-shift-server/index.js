@@ -54,7 +54,7 @@ async function run() {
     parcelCollection = db.collection("parcels");
     paymentCollection = db.collection("payments");
     userCollection = db.collection("users");
-
+    riderCollection = db.collection("rider")
     console.log("Connected to MongoDB");
   } catch (err) {
     console.error("MongoDB Connection Error:", err);
@@ -238,6 +238,19 @@ app.delete("/parcels/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+ // POST /riders
+    app.post("/riders", async (req, res) => {
+      const data = req.body;
+      data.status = "pending";
+      data.createdAt = new Date();
+
+      const result = await riderCollection.insertOne(data);
+      res.status(201).json({
+        message: "Rider application submitted",
+        insertedId: result.insertedId,
+      });
+    });
 
 // 9. Health Check
 app.get("/", (req, res) => {
