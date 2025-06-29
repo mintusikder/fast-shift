@@ -239,6 +239,53 @@ app.delete("/parcels/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+// GET /users/search?email=someemail
+app.get("/users/search", async (req, res) => {
+  const searchEmail = req.query.email;
+  if (!searchEmail) {
+    return res.status(400).json({ error: "Email query is required" });
+  }
+
+  try {
+    // Case-insensitive partial match on email
+    const users = await userCollection
+      .find({ email: { $regex: searchEmail, $options: "i" } })
+      .project({ email: 1, createdAt: 1, role: 1 }) // only return needed fields
+      .limit(10)
+      .toArray();
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("User search error:", error);
+    res.status(500).json({ error: "Failed to search users" });
+  }
+});
+// PATCH /users/:email/role
+app.patch("/users/:email/role", async (req, res) => {
+  const email = req.params.email;
+  const { role } = req.body; // expected: 'admin' or 'user' (or other roles)
+
+  if (!role) {
+    return res.status(400).json({ error: "Role is required" });
+  }
+
+  try {
+    const result = await userCollection.updateOne(
+      { email },
+      { $set: { role } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ message: `User role updated to ${role}` });
+  } catch (error) {
+    console.error("User role update error:", error);
+    res.status(500).json({ error: "Failed to update user role" });
+  }
+});
+
 
  // POST /riders
 app.post("/riders", async (req, res) => {
