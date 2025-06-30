@@ -11,8 +11,11 @@ import {
   FaHourglassHalf,
 } from "react-icons/fa";
 import FastShiftLogo from "../pages/Home/Shared/FastShiftLogo/FastShiftLogo";
+import useUserRole from "../hooks/useUserRole";
 
 const DashboardLayout = () => {
+  const { role,roleLoading } = useUserRole();
+  console.log(role);
   return (
     <div className="drawer lg:drawer-open">
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
@@ -86,8 +89,14 @@ const DashboardLayout = () => {
               <FaPaperPlane className="mr-2" /> Send Parcel
             </Link>
           </li>
+     {!roleLoading && role === "admin" && 
+      <>
+           <li>
+            <Link to="make-admin">
+              <FaPaperPlane className="mr-2" /> Make Admin
+            </Link>
+          </li>
 
-          {/* Rider Management Links */}
           <li>
             <Link to="active-riders">
               <FaMotorcycle className="mr-2" /> Active Riders
@@ -98,6 +107,8 @@ const DashboardLayout = () => {
               <FaHourglassHalf className="mr-2" /> Pending Riders
             </Link>
           </li>
+      </>
+     }
         </ul>
       </div>
     </div>

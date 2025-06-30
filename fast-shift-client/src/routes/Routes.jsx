@@ -15,6 +15,7 @@ import TrackParcel from "../pages/Dashboard/TrackParcel/TrackParcel";
 import BeARider from "../pages/Dashboard/BeARider/BeARider";
 import ActiveRider from "../pages/Dashboard/BeARider/ActiveRider";
 import PendingRider from "../pages/Dashboard/BeARider/PendingRider";
+import MakeAdmin from "../pages/Dashboard/MakeAdmin/MakeAdmin";
 
 export const router = createBrowserRouter([
   {
@@ -87,6 +88,10 @@ export const router = createBrowserRouter([
       {
         path: "pending-riders",
         Component: PendingRider,
+      },
+      {
+        path: "make-admin",
+        Component: MakeAdmin,
       },
 
       {

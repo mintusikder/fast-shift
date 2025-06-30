@@ -239,6 +239,28 @@ app.delete("/parcels/:id", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+// GET /users/role?email=user@example.com
+app.get("/users/role", async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email query parameter is required" });
+  }
+
+  try {
+    const user = await userCollection.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.status(200).json({ role: user.role || "user" }); // default to 'user' if no role set
+  } catch (err) {
+    console.error("Error fetching user role:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /users/search?email=someemail
 app.get("/users/search", async (req, res) => {
   const searchEmail = req.query.email;

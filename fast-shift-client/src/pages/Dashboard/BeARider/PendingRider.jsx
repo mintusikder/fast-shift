@@ -23,25 +23,22 @@ const PendingRiders = () => {
     queryFn: fetchPendingRiders,
   });
 
-  const handleStatusUpdate = async (id, newStatus) => {
-    let confirmText =
-      newStatus === "approved"
-        ? "approve"
-        : newStatus === "cancelled"
-        ? "cancel"
-        : newStatus;
+  const handleStatusUpdate = async (id, action) => {
+    const confirmText = action === "approve" ? "approve" : "reject";
 
-    if (newStatus === "cancelled") {
-      const cancelConfirm = await Swal.fire({
+    // First confirmation for rejection
+    if (action === "reject") {
+      const rejectConfirm = await Swal.fire({
         title: "Are you sure?",
-        text: "This will cancel the rider application permanently!",
+        text: "This will reject the rider application permanently!",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Yes, cancel it!",
+        confirmButtonText: "Yes, reject it!",
       });
-      if (!cancelConfirm.isConfirmed) return;
+      if (!rejectConfirm.isConfirmed) return;
     }
 
+    // Final confirmation
     const confirm = await Swal.fire({
       title: `Are you sure?`,
       text: `You are about to ${confirmText} this application.`,
@@ -52,11 +49,13 @@ const PendingRiders = () => {
 
     if (!confirm.isConfirmed) return;
 
+    const newStatus = action === "approve" ? "active" : "rejected";
+
     try {
       await axiosSecure.patch(`/riders/${id}`, { status: newStatus });
       setSelectedRider(null);
       Swal.fire("Success", `Rider ${newStatus}`, "success");
-      refetch(); // refresh list
+      refetch();
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "Failed to update rider status", "error");
@@ -85,52 +84,53 @@ const PendingRiders = () => {
               </tr>
             </thead>
             <tbody>
-              {riders.length === 0 && (
+              {riders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center">
                     No pending riders found.
                   </td>
                 </tr>
+              ) : (
+                riders.map((rider, index) => (
+                  <tr key={rider._id}>
+                    <td>{index + 1}</td>
+                    <td>{rider.name}</td>
+                    <td>{rider.email}</td>
+                    <td>{rider.phone}</td>
+                    <td>{rider.region}</td>
+                    <td>{rider.district}</td>
+                    <td className="flex gap-2 justify-center">
+                      <button
+                        className="btn btn-sm btn-info"
+                        onClick={() => {
+                          setSelectedRider(rider);
+                          window.scrollTo(0, 0);
+                        }}
+                      >
+                        <FaEye />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-success"
+                        onClick={() => handleStatusUpdate(rider._id, "approve")}
+                      >
+                        <FaCheck />
+                      </button>
+                      <button
+                        className="btn btn-sm btn-error"
+                        onClick={() => handleStatusUpdate(rider._id, "reject")}
+                      >
+                        <FaTimes />
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
-              {riders.map((rider, index) => (
-                <tr key={rider._id}>
-                  <td>{index + 1}</td>
-                  <td>{rider.name}</td>
-                  <td>{rider.email}</td>
-                  <td>{rider.phone}</td>
-                  <td>{rider.region}</td>
-                  <td>{rider.district}</td>
-                  <td className="flex gap-2 justify-center">
-                    <button
-                      className="btn btn-sm btn-info"
-                      onClick={() => {
-                        setSelectedRider(rider);
-                        window.scrollTo(0, 0);
-                      }}
-                    >
-                      <FaEye />
-                    </button>
-                    <button
-                      className="btn btn-sm btn-success"
-                      onClick={() => handleStatusUpdate(rider._id, "approved")}
-                    >
-                      <FaCheck />
-                    </button>
-                    <button
-                      className="btn btn-sm btn-error"
-                      onClick={() => handleStatusUpdate(rider._id, "cancelled")}
-                    >
-                      <FaTimes />
-                    </button>
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Modal */}
+      {/* Rider Info Modal */}
       {selectedRider && (
         <dialog
           open

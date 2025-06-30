@@ -11,6 +11,7 @@ const fetchActiveRiders = async () => {
 
 const ActiveRiders = () => {
   const [searchTerm, setSearchTerm] = useState("");
+
   const {
     data: riders = [],
     isLoading,
@@ -49,6 +50,12 @@ const ActiveRiders = () => {
       .includes(searchTerm.toLowerCase())
   );
 
+  const getStatusBadgeClass = (status) => {
+    if (status === "active") return "badge-success";
+    if (status === "deactivated") return "badge-error";
+    return "badge-ghost";
+  };
+
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-4">Active Riders</h2>
@@ -79,13 +86,14 @@ const ActiveRiders = () => {
                 <th>Phone</th>
                 <th>Region</th>
                 <th>District</th>
+                <th>Status</th>
                 <th className="text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredRiders.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center">
+                  <td colSpan="8" className="text-center">
                     No matching riders found.
                   </td>
                 </tr>
@@ -93,11 +101,16 @@ const ActiveRiders = () => {
                 filteredRiders.map((rider, index) => (
                   <tr key={rider._id}>
                     <td>{index + 1}</td>
-                    <td>{rider.name}</td>
-                    <td>{rider.email}</td>
-                    <td>{rider.phone}</td>
-                    <td>{rider.region}</td>
-                    <td>{rider.district}</td>
+                    <td>{rider.name || "N/A"}</td>
+                    <td>{rider.email || "N/A"}</td>
+                    <td>{rider.phone || "N/A"}</td>
+                    <td>{rider.region || "N/A"}</td>
+                    <td>{rider.district || "N/A"}</td>
+                    <td>
+                      <span className={`badge ${getStatusBadgeClass(rider.status)}`}>
+                        {rider.status}
+                      </span>
+                    </td>
                     <td className="text-center">
                       <button
                         className="btn btn-sm btn-error"
