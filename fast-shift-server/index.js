@@ -192,6 +192,29 @@ app.post("/users", async (req, res) => {
   }
 });
 
+// GET /users/search?email=someemail
+app.get("/users/search", verifyFbToken,verifyAdmin, async (req, res) => {
+  const searchEmail = req.query.email;
+
+  if (!searchEmail) {
+    return res.status(400).json({ error: "Email query is required" });
+  }
+
+  try {
+    const users = await userCollection
+      .find({ email: { $regex: searchEmail, $options: "i" } })
+      .project({ email: 1, createdAt: 1, role: 1 })
+      .limit(10)
+      .toArray();
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("User search error:", error);
+    res.status(500).json({ error: "Failed to search users" });
+  }
+});
+
+
 // Users: Get Role
 app.get("/users/role", async (req, res) => {
   try {
