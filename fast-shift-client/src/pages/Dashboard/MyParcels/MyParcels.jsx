@@ -1,14 +1,14 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../../hooks/useAuth";
-
 import Swal from "sweetalert2";
 import ParcelTable from "../ParcelTable/ParcelTable";
 import { useNavigate } from "react-router";
-import { axiosSecure } from "../../../hooks/useAxiosSecure";
+import useAxiosSecure from "../../../hooks/useAxiosSecure"; // ✅ Correct import (useAxiosSecure hook)
 
 const MyParcels = () => {
   const { user } = useAuth();
+  const axiosSecure = useAxiosSecure(); // ✅ Must use hook to access authorized instance
   const navigate = useNavigate();
 
   const {

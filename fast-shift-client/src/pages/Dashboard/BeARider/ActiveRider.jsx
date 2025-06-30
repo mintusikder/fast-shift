@@ -2,15 +2,16 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import { FaSearch, FaTrash } from "react-icons/fa";
-import { axiosSecure } from "../../../hooks/useAxiosSecure";
-
-const fetchActiveRiders = async () => {
-  const res = await axiosSecure.get("/riders/active");
-  return res.data;
-};
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const ActiveRiders = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const axiosSecure = useAxiosSecure(); // ✅ Secure Axios instance with token
+
+  const fetchActiveRiders = async () => {
+    const res = await axiosSecure.get("/riders/active");
+    return res.data;
+  };
 
   const {
     data: riders = [],
