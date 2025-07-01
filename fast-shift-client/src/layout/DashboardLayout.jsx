@@ -14,7 +14,7 @@ import FastShiftLogo from "../pages/Home/Shared/FastShiftLogo/FastShiftLogo";
 import useUserRole from "../hooks/useUserRole";
 
 const DashboardLayout = () => {
-  const { role,roleLoading } = useUserRole();
+  const { role, roleLoading } = useUserRole();
   console.log(role);
   return (
     <div className="drawer lg:drawer-open">
@@ -89,26 +89,31 @@ const DashboardLayout = () => {
               <FaPaperPlane className="mr-2" /> Send Parcel
             </Link>
           </li>
-     {!roleLoading && role === "admin" && 
-      <>
-           <li>
-            <Link to="make-admin">
-              <FaPaperPlane className="mr-2" /> Make Admin
-            </Link>
-          </li>
+          {!roleLoading && role === "admin" && (
+            <>
+              <li>
+                <Link to="make-admin">
+                  <FaPaperPlane className="mr-2" /> Make Admin
+                </Link>
+              </li>
+              <li>
+                <Link to="assign-rider">
+                  <FaPaperPlane className="mr-2" /> Assign Rider
+                </Link>
+              </li>
 
-          <li>
-            <Link to="active-riders">
-              <FaMotorcycle className="mr-2" /> Active Riders
-            </Link>
-          </li>
-          <li>
-            <Link to="pending-riders">
-              <FaHourglassHalf className="mr-2" /> Pending Riders
-            </Link>
-          </li>
-      </>
-     }
+              <li>
+                <Link to="active-riders">
+                  <FaMotorcycle className="mr-2" /> Active Riders
+                </Link>
+              </li>
+              <li>
+                <Link to="pending-riders">
+                  <FaHourglassHalf className="mr-2" /> Pending Riders
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </div>

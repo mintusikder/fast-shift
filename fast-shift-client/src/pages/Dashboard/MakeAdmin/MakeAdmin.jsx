@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { axiosSecure } from "../../../hooks/useAxiosSecure";
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const MakeAdmin = () => {
   const [searchEmail, setSearchEmail] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const axiosSecure = useAxiosSecure();
 
-  // Auto-search (debounced)
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (!searchEmail.trim()) {
@@ -16,7 +16,7 @@ const MakeAdmin = () => {
         return;
       }
       searchUsers();
-    }, 500); // 500ms debounce delay
+    }, 500);
 
     return () => clearTimeout(delayDebounce);
   }, [searchEmail]);
