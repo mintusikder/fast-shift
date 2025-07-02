@@ -3,13 +3,14 @@ import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { useLoaderData } from "react-router";
 
-
 import useAuth from "../../../hooks/useAuth";
-import { axiosSecure } from "../../../hooks/useAxiosSecure";
+import useAxiosSecure from "../../../hooks/useAxiosSecure"; // ✅ correct import
 
 const BeARider = () => {
   const { user } = useAuth();
-  const districtData = useLoaderData(); // array of { region, district, covered_area, ... }
+  const axiosSecure = useAxiosSecure(); // ✅ call the hook here
+  const districtData = useLoaderData();
+
 
   const {
     register,
