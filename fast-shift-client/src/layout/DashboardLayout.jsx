@@ -89,6 +89,18 @@ const DashboardLayout = () => {
               <FaPaperPlane className="mr-2" /> Send Parcel
             </Link>
           </li>
+          {/* rider link */}
+          {
+            !roleLoading && role === "rider" && (<>
+                 <li>
+                <Link to="pending-deliveries">
+                  <FaPaperPlane className="mr-2" /> Make Admin
+                </Link>
+              </li>
+            
+            </>)
+          }
+          {/* admin link */}
           {!roleLoading && role === "admin" && (
             <>
               <li>
