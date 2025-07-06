@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, Link } from "react-router"; // use react-router-dom, not react-router
+import { Outlet, Link } from "react-router"; // fixed: react-router-dom
 import {
   FaTachometerAlt,
   FaBoxOpen,
@@ -9,6 +9,8 @@ import {
   FaPaperPlane,
   FaMotorcycle,
   FaHourglassHalf,
+  FaUserShield,
+  FaMapMarkedAlt,
 } from "react-icons/fa";
 import FastShiftLogo from "../pages/Home/Shared/FastShiftLogo/FastShiftLogo";
 import useUserRole from "../hooks/useUserRole";
@@ -16,6 +18,7 @@ import useUserRole from "../hooks/useUserRole";
 const DashboardLayout = () => {
   const { role, roleLoading } = useUserRole();
   console.log(role);
+
   return (
     <div className="drawer lg:drawer-open">
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
@@ -54,11 +57,10 @@ const DashboardLayout = () => {
       {/* Sidebar */}
       <div className="drawer-side">
         <label htmlFor="my-drawer-2" className="drawer-overlay"></label>
-
         <ul className="menu p-4 w-80 min-h-full bg-base-200 text-base-content space-y-2">
           <FastShiftLogo />
 
-          {/* Dashboard Links */}
+          {/* Common Dashboard Links */}
           <li>
             <Link to="/dashboard">
               <FaTachometerAlt className="mr-2" /> Dashboard Home
@@ -76,7 +78,7 @@ const DashboardLayout = () => {
           </li>
           <li>
             <Link to="track">
-              <FaSearchLocation className="mr-2" /> Track a Package
+              <FaMapMarkedAlt className="mr-2" /> Track a Package
             </Link>
           </li>
           <li>
@@ -89,31 +91,29 @@ const DashboardLayout = () => {
               <FaPaperPlane className="mr-2" /> Send Parcel
             </Link>
           </li>
-          {/* rider link */}
-          {
-            !roleLoading && role === "rider" && (<>
-                 <li>
-                <Link to="pending-deliveries">
-                  <FaPaperPlane className="mr-2" /> Make Admin
-                </Link>
-              </li>
-            
-            </>)
-          }
-          {/* admin link */}
+
+          {/* Rider-Specific Link */}
+          {!roleLoading && role === "rider" && (
+            <li>
+              <Link to="pending-deliveries">
+                <FaMotorcycle className="mr-2" /> Pending Deliveries
+              </Link>
+            </li>
+          )}
+
+          {/* Admin-Specific Links */}
           {!roleLoading && role === "admin" && (
             <>
               <li>
                 <Link to="make-admin">
-                  <FaPaperPlane className="mr-2" /> Make Admin
+                  <FaUserShield className="mr-2" /> Make Admin
                 </Link>
               </li>
               <li>
                 <Link to="assign-rider">
-                  <FaPaperPlane className="mr-2" /> Assign Rider
+                  <FaMotorcycle className="mr-2" /> Assign Rider
                 </Link>
               </li>
-
               <li>
                 <Link to="active-riders">
                   <FaMotorcycle className="mr-2" /> Active Riders
