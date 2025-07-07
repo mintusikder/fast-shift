@@ -11,6 +11,7 @@ import {
   FaHourglassHalf,
   FaUserShield,
   FaMapMarkedAlt,
+  FaCheckCircle,
 } from "react-icons/fa";
 import FastShiftLogo from "../pages/Home/Shared/FastShiftLogo/FastShiftLogo";
 import useUserRole from "../hooks/useUserRole";
@@ -94,11 +95,18 @@ const DashboardLayout = () => {
 
           {/* Rider-Specific Link */}
           {!roleLoading && role === "rider" && (
-            <li>
-              <Link to="pending-deliveries">
-                <FaMotorcycle className="mr-2" /> Pending Deliveries
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link to="pending-deliveries">
+                  <FaMotorcycle className="mr-2" /> Pending Deliveries
+                </Link>
+              </li>
+              <li>
+                <Link to="completed-deliveries">
+                  <FaCheckCircle className="mr-2" /> Completed Deliveries
+                </Link>
+              </li>
+            </>
           )}
 
           {/* Admin-Specific Links */}

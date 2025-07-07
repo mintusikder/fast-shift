@@ -10,14 +10,12 @@ const PendingDeliveries = () => {
   const auth = getAuth();
   const user = auth.currentUser;
 
-  // Fetch parcels assigned to this rider, with auth token header
+  // Fetch assigned parcels for this rider
   const fetchParcels = async () => {
     if (!user) throw new Error("User not logged in");
     const token = await user.getIdToken();
     const { data } = await axiosSecure.get(`/rider/parcels?email=${user.email}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
     return Array.isArray(data) ? data : [];
   };
@@ -32,7 +30,6 @@ const PendingDeliveries = () => {
     queryFn: fetchParcels,
   });
 
-  // Mutation to update parcel delivery status with auth token header
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }) => {
       if (!user) throw new Error("User not logged in");
@@ -49,7 +46,6 @@ const PendingDeliveries = () => {
       return res.data;
     },
     onSuccess: () => {
-      Swal.fire("Success", "Parcel status updated!", "success");
       queryClient.invalidateQueries(["riderParcels", user?.email]);
     },
     onError: () => {
@@ -57,8 +53,32 @@ const PendingDeliveries = () => {
     },
   });
 
+  // Confirm before status update
   const handleUpdate = (id, nextStatus) => {
-    updateStatus.mutate({ id, status: nextStatus });
+    let actionText = nextStatus === "intransit" ? "mark as Picked" : "mark as Delivered";
+    let confirmText = nextStatus === "intransit" ? "Yes, pick it up!" : "Yes, deliver it!";
+    let successText = nextStatus === "intransit" ? "Parcel picked up!" : "Parcel delivered!";
+
+    Swal.fire({
+      title: `Are you sure?`,
+      text: `You are about to ${actionText}.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#aaa",
+      confirmButtonText: confirmText,
+    }).then((result) => {
+      if (result.isConfirmed) {
+        updateStatus.mutate(
+          { id, status: nextStatus },
+          {
+            onSuccess: () => {
+              Swal.fire("Success", successText, "success");
+            },
+          }
+        );
+      }
+    });
   };
 
   if (!user) return <div className="p-4">Please log in to see your parcels.</div>;
@@ -92,11 +112,7 @@ const PendingDeliveries = () => {
                 <td>{parcel.receiverName}</td>
                 <td>{parcel.receiverContact}</td>
                 <td className="capitalize">{parcel.delivery_status}</td>
-                <td>
-                  {parcel.delivery_status === "assigned"
-                    ? parcel.assigned_rider || "Not assigned"
-                    : "—"}
-                </td>
+                <td>{parcel.assigned_rider || "Not Assigned"}</td>
                 <td>
                   {parcel.delivery_status === "assigned" && (
                     <button
