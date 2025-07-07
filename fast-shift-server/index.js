@@ -46,7 +46,7 @@ const verifyFbToken = async (req, res, next) => {
     return res.status(403).send({ message: "Forbidden: Invalid token" });
   }
 };
-
+//verify Admin
 const verifyAdmin = async (req, res, next) => {
   const email = req.decoded?.email;
   if (!email) return res.status(403).send({ message: "Forbidden: No email" });
@@ -54,6 +54,21 @@ const verifyAdmin = async (req, res, next) => {
   try {
     const user = await userCollection.findOne({ email });
     if (!user || user.role !== "admin") {
+      return res.status(403).send({ message: "Forbidden: Not admin" });
+    }
+    next();
+  } catch (err) {
+    res.status(500).send({ message: "Server error in admin check" });
+  }
+};
+//verify Rider
+const verifyRider = async (req, res, next) => {
+  const email = req.decoded?.email;
+  if (!email) return res.status(403).send({ message: "Forbidden: No email" });
+
+  try {
+    const user = await userCollection.findOne({ email });
+    if (!user || user.role !== "rider") {
       return res.status(403).send({ message: "Forbidden: Not admin" });
     }
     next();
@@ -290,7 +305,7 @@ app.patch("/parcels/:id/assign", verifyFbToken, verifyAdmin, async (req, res) =>
 });
 
 // GET pending delivery parcels for a specific rider
-app.get("/rider/parcels", verifyFbToken, async (req, res) => {
+app.get("/rider/parcels", verifyFbToken, verifyRider, async (req, res) => {
   const riderEmail = req.query.email;
   console.log("Query email:", riderEmail);
   console.log("Decoded email:", req.decoded.email);
@@ -316,38 +331,77 @@ app.get("/rider/parcels", verifyFbToken, async (req, res) => {
 
 
 // PATCH /parcel/status/:id
-app.patch("/parcel/status/:id", verifyFbToken, async (req, res) => {
+app.patch("/parcel/status/:id", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  const email = req.decoded?.email;
 
   try {
-    const parcel = await parcelCollection.findOne({ _id: new ObjectId(id) });
+    const updateData = { delivery_status: status };
 
-    if (!parcel) {
-      return res.status(404).json({ message: "Parcel not found" });
+    if (status === "intransit") {
+      updateData.picked_at = new Date();
     }
-
-    // Check if this rider is assigned to the parcel
-    if (parcel.assigned_rider !== email) {
-      return res.status(403).json({ message: "Forbidden: You are not assigned to this parcel" });
+    if (status === "delivered") {
+      updateData.delivered_at = new Date();
     }
 
     const result = await parcelCollection.updateOne(
       { _id: new ObjectId(id) },
-      { $set: { delivery_status: status } }
+      { $set: updateData }
     );
 
     if (result.modifiedCount > 0) {
       res.status(200).json({ success: true, status });
     } else {
-      res.status(400).json({ message: "No changes made to parcel" });
+      res.status(404).json({ success: false, message: "Parcel not found or already updated" });
     }
   } catch (error) {
-    console.error("Error updating parcel status:", error);
     res.status(500).json({ error: "Failed to update parcel status" });
   }
 });
+
+//Completed delivered
+app.get("/rider/completed-parcels", async (req, res) => {
+  const riderEmail = req.query.email;
+
+  if (!riderEmail) {
+    return res.status(400).json({ error: "Rider email is required" });
+  }
+
+  try {
+    // Get all parcels that are delivered by the rider
+    const completedParcels = await parcelCollection.find({
+      assigned_rider: riderEmail,
+      delivery_status: "delivered",
+    }).toArray();
+
+    // Add earning and readable timestamps
+    const parcelsWithEarnings = completedParcels.map((parcel) => {
+      const deliveryCost = typeof parcel.cost === "object" ? parcel.cost.$numberInt || 0 : parcel.cost || 0;
+      const numericCost = parseFloat(deliveryCost);
+      const earning = +(numericCost * 0.3).toFixed(2); // 30% earnings
+
+      return {
+        _id: parcel._id,
+        tracking_id: parcel.tracking_id,
+        senderName: parcel.senderName,
+        receiverName: parcel.receiverName,
+        cost: numericCost,
+        earning,
+        delivery_status: parcel.delivery_status,
+        assigned_rider: parcel.assigned_rider,
+        picked_at: parcel.picked_at || null, // Optional field
+        delivered_at: parcel.delivered_at || null, // Optional field
+      };
+    });
+
+    res.status(200).json(parcelsWithEarnings);
+  } catch (error) {
+    console.error("Error fetching completed parcels:", error);
+    res.status(500).json({ error: "Failed to fetch completed parcels" });
+  }
+});
+
 
 
 // SEARCH USERS
