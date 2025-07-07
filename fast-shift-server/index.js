@@ -289,6 +289,66 @@ app.patch("/parcels/:id/assign", verifyFbToken, verifyAdmin, async (req, res) =>
   }
 });
 
+// GET pending delivery parcels for a specific rider
+app.get("/rider/parcels", verifyFbToken, async (req, res) => {
+  const riderEmail = req.query.email;
+  console.log("Query email:", riderEmail);
+  console.log("Decoded email:", req.decoded.email);
+
+  if (!riderEmail || riderEmail !== req.decoded.email) {
+    return res.status(403).json({ message: "Forbidden: Email mismatch" });
+  }
+
+  try {
+    const pendingParcels = await parcelCollection.find({
+      assigned_rider: riderEmail,
+      delivery_status: { $in: ["assigned", "intransit"] },
+    }).toArray();
+
+    console.log("Pending parcels found:", pendingParcels.length);
+
+    res.status(200).json(pendingParcels || []);
+  } catch (error) {
+    console.error("Error fetching rider parcels:", error);
+    res.status(500).json({ error: "Failed to fetch parcels" });
+  }
+});
+
+
+// PATCH /parcel/status/:id
+app.patch("/parcel/status/:id", verifyFbToken, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const email = req.decoded?.email;
+
+  try {
+    const parcel = await parcelCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!parcel) {
+      return res.status(404).json({ message: "Parcel not found" });
+    }
+
+    // Check if this rider is assigned to the parcel
+    if (parcel.assigned_rider !== email) {
+      return res.status(403).json({ message: "Forbidden: You are not assigned to this parcel" });
+    }
+
+    const result = await parcelCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { delivery_status: status } }
+    );
+
+    if (result.modifiedCount > 0) {
+      res.status(200).json({ success: true, status });
+    } else {
+      res.status(400).json({ message: "No changes made to parcel" });
+    }
+  } catch (error) {
+    console.error("Error updating parcel status:", error);
+    res.status(500).json({ error: "Failed to update parcel status" });
+  }
+});
+
 
 // SEARCH USERS
 app.get("/users/search", verifyFbToken, verifyAdmin, async (req, res) => {
